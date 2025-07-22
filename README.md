@@ -10,6 +10,7 @@ A secure, scalable, and production-ready banking API built with Go and Gin frame
 - **Transaction Processing**: Deposits, withdrawals, and transfers between accounts
 - **Transaction Limits**: Daily and monthly transaction limits for security
 - **Audit Logging**: Comprehensive audit trail for all financial operations
+- **Database Migrations**: Proper SQL-based database migrations with rollback support
 
 ### Security & Compliance
 - **JWT Authentication**: Secure token-based authentication
@@ -17,6 +18,7 @@ A secure, scalable, and production-ready banking API built with Go and Gin frame
 - **Input Validation**: Comprehensive validation for all inputs
 - **Password Security**: Bcrypt hashing with configurable cost
 - **CORS Protection**: Configurable CORS policies
+- **SQL Injection Prevention**: ORM-based protection
 
 ### Monitoring & Observability
 - **Health Checks**: Multiple health check endpoints (liveness, readiness, detailed)
@@ -26,6 +28,8 @@ A secure, scalable, and production-ready banking API built with Go and Gin frame
 - **Database Monitoring**: Connection pool metrics and health checks
 
 ### Production Ready
+- **Database Migrations**: SQL-based migrations with embedded files
+- **Binary Builds**: Cross-platform binary compilation
 - **Docker Support**: Multi-stage Dockerfile for production
 - **Database Connection Pooling**: Optimized database connections
 - **Configuration Management**: Environment-based configuration
@@ -82,16 +86,56 @@ A secure, scalable, and production-ready banking API built with Go and Gin frame
    # Edit .env with your configuration
    ```
 
-4. **Run the application**
+4. **Run database migrations**
+   ```bash
+   # Migrations run automatically on startup
+   go run cmd/server/main.go
+   ```
+
+5. **Run the application**
    ```bash
    go run cmd/server/main.go
    ```
 
-5. **Access the API**
+6. **Access the API**
    - API: http://localhost:8080/api/v1
    - Health Check: http://localhost:8080/health
    - Metrics: http://localhost:8080/metrics
    - API Docs: http://localhost:8080/swagger/index.html (when running with Swagger UI)
+
+### Binary Build & Deployment
+
+1. **Build for current platform**
+   ```bash
+   # Using Makefile
+   make build
+   
+   # Or using scripts
+   ./scripts/build.sh          # Unix/Linux/macOS
+   ./scripts/build.bat         # Windows
+   ```
+
+2. **Cross-platform builds**
+   ```bash
+   # Build for multiple platforms
+   make build-all
+   
+   # Or using scripts
+   ./scripts/build.sh linux amd64
+   ./scripts/build.sh windows amd64
+   ./scripts/build.sh darwin amd64
+   ```
+
+3. **Deploy binary**
+   ```bash
+   # Copy binary and database
+   cp build/bank-api /usr/local/bin/
+   
+   # Run with environment variables
+   export JWT_SECRET=your-secret-key
+   export ENVIRONMENT=production
+   ./bank-api
+   ```
 
 ### Docker Deployment
 
@@ -124,6 +168,24 @@ The application uses environment variables for configuration. See `.env.example`
 | `DB_DRIVER` | Database driver (sqlite only) | `sqlite` |
 | `RATE_LIMIT_RPS` | Rate limit requests per second | `100` |
 | `LOG_LEVEL` | Logging level (debug/info/warn/error) | `info` |
+
+## 🗄️ Database Management
+
+### Database Migrations
+The project uses proper SQL-based migrations with embedded files:
+
+```bash
+# Run migrations (automatic on startup)
+go run cmd/server/main.go
+
+# Manual migration (if needed)
+go run cmd/migrate/main.go
+```
+
+### Database Files
+- **Development**: `bank.db` (SQLite)
+- **Testing**: `bank_test.db` (SQLite)
+- **Production**: Configurable via environment variables
 
 ## 📊 Monitoring
 
@@ -159,6 +221,9 @@ go test -cover ./...
 
 # Run specific test suite
 go test ./internal/handlers/tests/integration
+
+# Run with race detection
+go test -race ./...
 ```
 
 ### Test Structure
@@ -166,15 +231,14 @@ go test ./internal/handlers/tests/integration
 - **Integration Tests**: End-to-end API testing
 - **Load Tests**: Performance and scalability testing
 
-## 📚 API Documentation
+### Database Testing
+```bash
+# Run tests with test database
+go test ./... -tags=integration
 
-### OpenAPI/Swagger
-Comprehensive API documentation is available:
-- **OpenAPI Spec**: `docs/openapi.yaml`
-- **Swagger UI**: Available at `/swagger/index.html` when running locally
-
-### Postman Collection
-A Postman collection is available in the `docs/` directory for easy API testing.
+# Clean test database
+rm bank_test.db
+```
 
 ## 🔐 Security Considerations
 
@@ -211,7 +275,17 @@ A Postman collection is available in the `docs/` directory for easy API testing.
    export DB_DRIVER=sqlite
    ```
 
-3. **Docker Production**
+3. **Binary Deployment**
+   ```bash
+   # Build production binary
+   make build
+   
+   # Deploy with systemd
+   sudo cp build/bank-api /usr/local/bin/
+   sudo systemctl start bank-api
+   ```
+
+4. **Docker Production**
    ```bash
    docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
    ```
@@ -221,24 +295,98 @@ A Postman collection is available in the `docs/` directory for easy API testing.
 - **Kubernetes**: Helm charts available in `k8s/` directory
 - **Heroku**: Deploy button available
 
-## 🤝 Contributing
+## 🛠️ Development Workflow
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Development Setup
+```bash
+# Install dependencies
+go mod download
 
-## 📄 License
+# Run development server with hot reload
+make dev
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+# Run tests in watch mode
+make test-watch
+```
 
-## 🆘 Support
+### Database Development
+```bash
+# Reset database
+make db-reset
 
-For support and questions:
-- Create an issue in the GitHub repository
-- Check the [troubleshooting guide](docs/troubleshooting.md)
-- Contact support@bankapi.com
+# View database
+sqlite3 bank.db
+```
+
+### Code Quality
+```bash
+# Format code
+make fmt
+
+# Run linter
+make lint
+
+# Run security scan
+make security-scan
+```
+
+## 📚 API Documentation
+
+### OpenAPI/Swagger
+Comprehensive API documentation is available:
+- **OpenAPI Spec**: `docs/openapi.yaml`
+- **Swagger UI**: Available at `/swagger/index.html` when running locally
+
+### Postman Collection
+A Postman collection is available in the `docs/` directory for easy API testing.
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Issues**
+   ```bash
+   # Check database file permissions
+   ls -la bank.db
+   
+   # Reset database
+   rm bank.db && go run cmd/server/main.go
+   ```
+
+2. **Port Already in Use**
+   ```bash
+   # Check what's using port 8080
+   lsof -i :8080
+   
+   # Use different port
+   export PORT=8081
+   ```
+
+3. **Binary Build Issues**
+   ```bash
+   # Clean build cache
+   make clean
+   
+   # Build with verbose output
+   make build-verbose
+   ```
+
+4. **Migration Issues**
+   ```bash
+   # Check migration status
+   go run cmd/migrate/main.go status
+   
+   # Force migration
+   go run cmd/migrate/main.go up
+   ```
+
+### Debug Mode
+```bash
+# Enable debug logging
+export LOG_LEVEL=debug
+export ENVIRONMENT=development
+go run cmd/server/main.go
+```
 
 ## 📈 Performance
 

@@ -91,13 +91,18 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := h.DB.Where("username = ?", req.Username).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
-		return
+	err := h.DB.Where("username = ?", req.Username).First(&user).Error
+
+	// If user not found, use dummy hash for comparison to prevent timing attacks
+	targetHash := user.PasswordHash
+	if err != nil {
+		targetHash = h.dummyHash
 	}
 
-	// Verify password hash
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+	// Always perform bcrypt comparison to maintain constant time (roughly)
+	bcryptErr := bcrypt.CompareHashAndPassword([]byte(targetHash), []byte(req.Password))
+
+	if err != nil || bcryptErr != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}

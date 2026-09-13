@@ -6,3 +6,14 @@
 **Optimization**: Extracted `rand.Seed(time.Now().UnixNano())` out of `generateAccountNumber` into an `init()` function.
 **Rationale**: Repeatedly seeding `math/rand` on every function call generates overhead and causes lock contention in highly concurrent environments because the global random generator is protected by a mutex. By moving it to `init()`, the seeding process happens only once during package initialization, improving throughput.
 **Impact**: Performance benchmark demonstrated execution time improved from `420.2 ns/op` to `208.1 ns/op`, which makes it approximately two times faster.
+
+## Performance Optimization: Rate Limiter Cleanup Lock Contention
+- **Date**: 2026-09-13
+- **File**: `internal/middleware/rate_limiter.go`
+- **Issue**: The `cleanupExpiredLimiters` function held an exclusive `sync.RWMutex.Lock()` for the entire duration of iterating over maps (`ipLimiters` and `userLimiters`) to find and delete expired rate limiters. For maps with large number of items (e.g., 100k IPs), this caused severe blocking and high latency for all incoming requests needing the rate limit middleware, which was on the critical path.
+- **Solution**: Implemented a two-phase cleanup process:
+  1. Acquire an `RLock()` to iterate over the maps safely and identify keys that are candidates for deletion.
+  2. Store these candidate keys in a local slice.
+  3. Release the `RLock()`.
+  4. Only if candidates were found, acquire a full `Lock()`, iterate over the candidate slice, double check the deletion criteria (in case the item was used between releasing the `RLock` and acquiring the `Lock`), and perform the deletion.
+- **Measured Improvement**: Benchmarking `BenchmarkRateLimiterConcurrentCleanup` with 100k items and concurrent read requests. Baseline latency dropped significantly by decoupling the map iteration (O(N) duration) from the exclusive lock scope. Worst-case locking per incoming request dropped drastically.

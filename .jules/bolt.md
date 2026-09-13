@@ -35,3 +35,7 @@
 **Optimization**: Added in-memory caching using sync.Map for transaction count queries in GetTransactions.
 **Rationale**: The Count query became an O(N) bottleneck for pagination on large accounts. Caching it reduces it to O(1) in the best case, with invalidation triggered on relevant writes (Deposit, Withdraw, Transfer).
 **Impact**: BenchmarkGetTransactions improved execution time from ~44ms/op to ~2.5ms/op.
+
+## 2024-05-24 - [Avoid Regex Recompilation in Loop]
+**Learning:** `regexp.MustCompile` shouldn't be inside loops or file walk routines because the regex engine spends significant CPU cycles recompiling the same pattern for every iteration (e.g., every file parsed).
+**Action:** Always move `regexp.MustCompile` statements to global or package-level variables so they are compiled exactly once at application startup.

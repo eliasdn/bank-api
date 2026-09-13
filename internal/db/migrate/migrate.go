@@ -11,6 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var migrationFileRegex = regexp.MustCompile(`^(\d+)_([^.]+)\.(up|down)\.sql$`)
+
 type Migration struct {
 	Version int
 	Name    string
@@ -37,7 +39,7 @@ func (m *Migrator) LoadMigrations(migrationsFS fs.FS) error {
 			return nil
 		}
 
-		matches := regexp.MustCompile(`^(\d+)_([^.]+)\.(up|down)\.sql$`).FindStringSubmatch(d.Name())
+		matches := migrationFileRegex.FindStringSubmatch(d.Name())
 		if len(matches) != 4 {
 			return nil
 		}

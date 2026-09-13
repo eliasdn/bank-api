@@ -33,7 +33,18 @@ func (s *AuditService) LogTransaction(c *gin.Context, userID uint, transaction *
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
-	return s.logger.LogTransaction(userID, transaction, account, ipAddress, userAgent)
+	// Create a copy of context to safely use it in a goroutine
+	cCopy := c.Copy()
+
+	go func() {
+		if err := s.logger.LogTransaction(userID, transaction, account, ipAddress, userAgent); err != nil {
+			// Log error but don't fail the synchronous flow
+			// gin.DefaultErrorWriter is typically os.Stderr
+			cCopy.Error(err)
+		}
+	}()
+
+	return nil
 }
 
 // LogUserAction logs user-related actions

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -131,6 +132,7 @@ func TestDeposit(t *testing.T) {
 			}
 
 			handler.Deposit(c)
+			time.Sleep(10 * time.Millisecond)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
@@ -220,6 +222,7 @@ func TestWithdraw(t *testing.T) {
 			}
 
 			handler.Withdraw(c)
+			time.Sleep(10 * time.Millisecond)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
@@ -333,6 +336,7 @@ func TestTransfer(t *testing.T) {
 			}
 
 			handler.Transfer(c)
+			time.Sleep(10 * time.Millisecond)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
@@ -417,6 +421,7 @@ func TestGetTransactions(t *testing.T) {
 			}
 
 			handler.GetTransactions(c)
+			time.Sleep(10 * time.Millisecond)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
@@ -450,6 +455,7 @@ func TestTransactionDatabaseErrors(t *testing.T) {
 		c.Set("userID", user.ID)
 
 		handler.Deposit(c)
+		time.Sleep(10 * time.Millisecond)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})

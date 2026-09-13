@@ -86,25 +86,48 @@ func (rl *RateLimiter) LimitByUser(userID string) *rate.Limiter {
 // cleanupExpiredLimiters removes expired rate limiters
 func (rl *RateLimiter) cleanupExpiredLimiters() {
 	for range rl.cleanupTicker.C {
-		// Clean IP limiters older than 24 hours
-		rl.ipMutex.Lock()
+		// Identify IP limiters to clean up
+		var ipsToRemove []string
+		rl.ipMutex.RLock()
 		for ip, limiter := range rl.ipLimiters {
 			// Simple cleanup - remove if no recent activity
-			// This is a basic implementation - could be enhanced with last access time
 			if limiter.Tokens() == 100 { // Full bucket indicates no recent usage
-				delete(rl.ipLimiters, ip)
+				ipsToRemove = append(ipsToRemove, ip)
 			}
 		}
-		rl.ipMutex.Unlock()
+		rl.ipMutex.RUnlock()
 
-		// Clean user limiters older than 24 hours
-		rl.userMutex.Lock()
+		// Remove identified IP limiters
+		if len(ipsToRemove) > 0 {
+			rl.ipMutex.Lock()
+			for _, ip := range ipsToRemove {
+				if limiter, exists := rl.ipLimiters[ip]; exists && limiter.Tokens() == 100 {
+					delete(rl.ipLimiters, ip)
+				}
+			}
+			rl.ipMutex.Unlock()
+		}
+
+		// Identify user limiters to clean up
+		var usersToRemove []string
+		rl.userMutex.RLock()
 		for userID, limiter := range rl.userLimiters {
 			if limiter.Tokens() == 1000 { // Full bucket indicates no recent usage
-				delete(rl.userLimiters, userID)
+				usersToRemove = append(usersToRemove, userID)
 			}
 		}
-		rl.userMutex.Unlock()
+		rl.userMutex.RUnlock()
+
+		// Remove identified user limiters
+		if len(usersToRemove) > 0 {
+			rl.userMutex.Lock()
+			for _, userID := range usersToRemove {
+				if limiter, exists := rl.userLimiters[userID]; exists && limiter.Tokens() == 1000 {
+					delete(rl.userLimiters, userID)
+				}
+			}
+			rl.userMutex.Unlock()
+		}
 	}
 }
 

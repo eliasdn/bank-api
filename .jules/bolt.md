@@ -10,3 +10,13 @@
 ## 2026-09-13 - [Fmt to Byte Slice Allocation Optimization]
 **Learning:** `fmt.Sprintf` is consistently a high overhead source for simple, fixed-length string generation due to reflection.
 **Action:** For performance sensitive generation like account numbers, generate string using fixed byte arrays avoiding `fmt`.
+## Performance Optimization: Rate Limiter Cleanup Lock Contention
+- **Date**: 2026-09-13
+- **File**: `internal/middleware/rate_limiter.go`
+- **Issue**: The `cleanupExpiredLimiters` function held an exclusive `sync.RWMutex.Lock()` for the entire duration of iterating over maps (`ipLimiters` and `userLimiters`) to find and delete expired rate limiters. For maps with large number of items (e.g., 100k IPs), this caused severe blocking and high latency for all incoming requests needing the rate limit middleware, which was on the critical path.
+- **Solution**: Implemented a two-phase cleanup process:
+  1. Acquire an `RLock()` to iterate over the maps safely and identify keys that are candidates for deletion.
+  2. Store these candidate keys in a local slice.
+  3. Release the `RLock()`.
+  4. Only if candidates were found, acquire a full `Lock()`, iterate over the candidate slice, double check the deletion criteria (in case the item was used between releasing the `RLock` and acquiring the `Lock`), and perform the deletion.
+- **Measured Improvement**: Benchmarking `BenchmarkRateLimiterConcurrentCleanup` with 100k items and concurrent read requests. Baseline latency dropped significantly by decoupling the map iteration (O(N) duration) from the exclusive lock scope. Worst-case locking per incoming request dropped drastically.

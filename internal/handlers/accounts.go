@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bank-api/internal/models"
-	"fmt"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -16,8 +15,19 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// generateAccountNumber generates a random 9-character account number.
+// Optimized to avoid fmt.Sprintf overhead by formatting directly into a byte slice.
 func generateAccountNumber() string {
-	return fmt.Sprintf("ACC%06d", rand.Intn(1000000))
+	n := rand.Intn(1000000)
+	b := make([]byte, 9)
+	b[0] = 'A'
+	b[1] = 'C'
+	b[2] = 'C'
+	for i := 8; i >= 3; i-- {
+		b[i] = byte(n%10) + '0'
+		n /= 10
+	}
+	return string(b)
 }
 
 func (h *Handler) GetAccounts(c *gin.Context) {

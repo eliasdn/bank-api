@@ -19,8 +19,7 @@ const (
 )
 
 var (
-	emailRegex    = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 )
 
 // Validator provides validation methods
@@ -53,8 +52,13 @@ func (v *Validator) ValidateUsername(username string) error {
 	if len(username) < MinUsernameLength || len(username) > MaxUsernameLength {
 		return errors.NewValidationError("username must be between %d and %d characters", MinUsernameLength, MaxUsernameLength)
 	}
-	if !usernameRegex.MatchString(username) {
-		return errors.NewValidationError("username can only contain letters, numbers, underscores, and hyphens")
+
+	// Validate using a manual byte loop to avoid regex overhead in hot paths
+	for i := 0; i < len(username); i++ {
+		c := username[i]
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-') {
+			return errors.NewValidationError("username can only contain letters, numbers, underscores, and hyphens")
+		}
 	}
 	return nil
 }

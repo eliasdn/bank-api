@@ -5,6 +5,7 @@ import (
 	"bank-api/internal/db"
 	"bank-api/internal/services"
 	"golang.org/x/crypto/bcrypt"
+	"sync"
 )
 
 type Handler struct {
@@ -12,6 +13,7 @@ type Handler struct {
 	Config       *config.AppConfig
 	AuditService *services.AuditService
 	dummyHash    string
+	TxCountCache sync.Map
 }
 
 func NewHandler(db db.DBInterface, cfg *config.AppConfig) *Handler {
@@ -24,5 +26,6 @@ func NewHandler(db db.DBInterface, cfg *config.AppConfig) *Handler {
 		Config:       cfg,
 		AuditService: services.NewAuditService(db.GetDB()),
 		dummyHash:    string(dummyHash),
+		TxCountCache: sync.Map{},
 	}
 }

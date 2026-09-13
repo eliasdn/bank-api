@@ -12,8 +12,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func generateAccountNumber() string {
+func init() {
 	rand.Seed(time.Now().UnixNano())
+}
+
+func generateAccountNumber() string {
 	return fmt.Sprintf("ACC%06d", rand.Intn(1000000))
 }
 

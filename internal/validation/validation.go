@@ -77,10 +77,10 @@ func (v *Validator) ValidatePassword(password string) error {
 		return errors.NewValidationError("password must be between %d and %d characters", MinPasswordLength, MaxPasswordLength)
 	}
 
-	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
-	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
-	hasNumber := regexp.MustCompile(`[0-9]`).MatchString(password)
-	hasSpecial := regexp.MustCompile(`[!@#$%^&*(),.?":{}|<>]`).MatchString(password)
+	hasUpper := strings.ContainsAny(password, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	hasLower := strings.ContainsAny(password, "abcdefghijklmnopqrstuvwxyz")
+	hasNumber := strings.ContainsAny(password, "0123456789")
+	hasSpecial := strings.ContainsAny(password, `!@#$%^&*(),.?":{}|<>`)
 
 	if !hasUpper {
 		return errors.NewValidationError("password must contain at least one uppercase letter")

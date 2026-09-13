@@ -72,6 +72,9 @@ func (h *Handler) Deposit(c *gin.Context) {
 		return
 	}
 
+	// Invalidate cache
+	h.TxCountCache.Delete(account.ID)
+
 	// Log audit event
 	if err := h.AuditService.LogTransaction(c, userID, &transaction, &account); err != nil {
 		// Log error but don't fail the transaction
@@ -153,6 +156,9 @@ func (h *Handler) Withdraw(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "transaction failed"})
 		return
 	}
+
+	// Invalidate cache
+	h.TxCountCache.Delete(account.ID)
 
 	// Log audit event
 	if err := h.AuditService.LogTransaction(c, userID, &transaction, &account); err != nil {
@@ -265,6 +271,10 @@ func (h *Handler) Transfer(c *gin.Context) {
 		return
 	}
 
+	// Invalidate cache for both accounts
+	h.TxCountCache.Delete(fromAccount.ID)
+	h.TxCountCache.Delete(toAccount.ID)
+
 	// Log audit events for both transactions
 	if err := h.AuditService.LogTransaction(c, userID, &outgoingTx, &fromAccount); err != nil {
 		c.Error(err)
@@ -316,7 +326,16 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 
 	// Get total count
 	var total int64
-	h.DB.Model(&models.Transaction{}).Where("account_id = ?", accountID).Count(&total)
+
+	// Convert accountID string to uint to use as cache key
+	accID, _ := strconv.ParseUint(accountID, 10, 64)
+
+	if val, ok := h.TxCountCache.Load(uint(accID)); ok {
+		total = val.(int64)
+	} else {
+		h.DB.Model(&models.Transaction{}).Where("account_id = ?", accountID).Count(&total)
+		h.TxCountCache.Store(uint(accID), total)
+	}
 
 	// Get paginated transactions
 	var transactions []models.Transaction

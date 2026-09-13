@@ -6,3 +6,7 @@
 **Optimization**: Extracted `rand.Seed(time.Now().UnixNano())` out of `generateAccountNumber` into an `init()` function.
 **Rationale**: Repeatedly seeding `math/rand` on every function call generates overhead and causes lock contention in highly concurrent environments because the global random generator is protected by a mutex. By moving it to `init()`, the seeding process happens only once during package initialization, improving throughput.
 **Impact**: Performance benchmark demonstrated execution time improved from `420.2 ns/op` to `208.1 ns/op`, which makes it approximately two times faster.
+
+## 2026-09-13 - [Fmt to Byte Slice Allocation Optimization]
+**Learning:** `fmt.Sprintf` is consistently a high overhead source for simple, fixed-length string generation due to reflection.
+**Action:** For performance sensitive generation like account numbers, generate string using fixed byte arrays avoiding `fmt`.

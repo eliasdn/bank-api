@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"bank-api/internal/models"
+	"bank-api/internal/validation"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -38,7 +37,8 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	}
 
 	// Validate password complexity
-	if err := validatePassword(req.Password); err != nil {
+	validator := validation.New()
+	if err := validator.ValidatePassword(req.Password); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -258,31 +258,4 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User deleted successfully",
 	})
-}
-
-// validatePassword validates password complexity requirements
-func validatePassword(password string) error {
-	if len(password) < 8 {
-		return errors.New("password must be at least 8 characters long")
-	}
-
-	hasUpper := strings.ContainsAny(password, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	hasLower := strings.ContainsAny(password, "abcdefghijklmnopqrstuvwxyz")
-	hasDigit := strings.ContainsAny(password, "0123456789")
-	hasSpecial := strings.ContainsAny(password, "!@#$%^&*()_+-=[]{}|;:,.<>?")
-
-	if !hasUpper {
-		return errors.New("password must contain at least one uppercase letter")
-	}
-	if !hasLower {
-		return errors.New("password must contain at least one lowercase letter")
-	}
-	if !hasDigit {
-		return errors.New("password must contain at least one digit")
-	}
-	if !hasSpecial {
-		return errors.New("password must contain at least one special character")
-	}
-
-	return nil
 }

@@ -81,10 +81,24 @@ func (v *Validator) ValidatePassword(password string) error {
 		return errors.NewValidationError("password must be between %d and %d characters", MinPasswordLength, MaxPasswordLength)
 	}
 
-	hasUpper := strings.ContainsAny(password, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	hasLower := strings.ContainsAny(password, "abcdefghijklmnopqrstuvwxyz")
-	hasNumber := strings.ContainsAny(password, "0123456789")
-	hasSpecial := strings.ContainsAny(password, `!@#$%^&*(),.?":{}|<>`)
+	var hasUpper, hasLower, hasNumber, hasSpecial bool
+
+	// Optimized to use a single byte loop instead of multiple strings.ContainsAny calls
+	for i := 0; i < len(password); i++ {
+		c := password[i]
+		if c >= 'a' && c <= 'z' {
+			hasLower = true
+		} else if c >= 'A' && c <= 'Z' {
+			hasUpper = true
+		} else if c >= '0' && c <= '9' {
+			hasNumber = true
+		} else {
+			switch c {
+			case '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', ',', '.', '?', '"', ':', '{', '}', '|', '<', '>':
+				hasSpecial = true
+			}
+		}
+	}
 
 	if !hasUpper {
 		return errors.NewValidationError("password must contain at least one uppercase letter")

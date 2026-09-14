@@ -39,3 +39,7 @@
 ## 2024-05-24 - [Avoid Regex Recompilation in Loop]
 **Learning:** `regexp.MustCompile` shouldn't be inside loops or file walk routines because the regex engine spends significant CPU cycles recompiling the same pattern for every iteration (e.g., every file parsed).
 **Action:** Always move `regexp.MustCompile` statements to global or package-level variables so they are compiled exactly once at application startup.
+
+## 2026-09-14 - [Avoid `strings.ContainsAny` in Hot Paths for Multiple Character Check]
+**Learning:** Checking for the presence of character classes (uppercase, lowercase, numbers, specials) using multiple calls to `strings.ContainsAny` in a hot path like password validation is less efficient than a single manual byte loop. A single manual byte loop scans the string once and performs basic ASCII comparisons, avoiding the overhead of multiple function calls and inner loop executions within `strings.ContainsAny`.
+**Action:** Replace multiple `strings.ContainsAny` checks with a single manual byte loop when validating simple string formats and character class requirements, especially in performance-sensitive parts of the application.

@@ -3,7 +3,6 @@ package audit
 import (
 	"bank-api/internal/models"
 	"encoding/json"
-	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -63,19 +62,31 @@ func (l *DatabaseAuditLogger) LogAction(userID uint, action, resource, resourceI
 	return l.db.Create(&auditLog).Error
 }
 
+// txLog represents the JSON structure for a logged transaction
+type txLog struct {
+	TransactionID uint    `json:"transaction_id"`
+	Amount        float64 `json:"amount"`
+	Type          string  `json:"type"`
+	Status        string  `json:"status"`
+	Reference     string  `json:"reference"`
+	AccountID     uint    `json:"account_id"`
+	AccountNumber string  `json:"account_number"`
+	NewBalance    float64 `json:"new_balance"`
+}
+
 // LogTransaction logs a financial transaction
 func (l *DatabaseAuditLogger) LogTransaction(userID uint, transaction *models.Transaction, account *models.Account, ipAddress, userAgent string) error {
-	description := fmt.Sprintf("%s of %.2f on account %s", transaction.TransactionType, transaction.Amount, account.AccountNumber)
+	description := transaction.TransactionType + " of " + strconv.FormatFloat(transaction.Amount, 'f', 2, 64) + " on account " + account.AccountNumber
 
-	transactionJSON, _ := json.Marshal(map[string]interface{}{
-		"transaction_id": transaction.ID,
-		"amount":         transaction.Amount,
-		"type":           transaction.TransactionType,
-		"status":         transaction.Status,
-		"reference":      transaction.Reference,
-		"account_id":     account.ID,
-		"account_number": account.AccountNumber,
-		"new_balance":    account.Balance,
+	transactionJSON, _ := json.Marshal(txLog{
+		TransactionID: transaction.ID,
+		Amount:        transaction.Amount,
+		Type:          transaction.TransactionType,
+		Status:        transaction.Status,
+		Reference:     transaction.Reference,
+		AccountID:     account.ID,
+		AccountNumber: account.AccountNumber,
+		NewBalance:    account.Balance,
 	})
 
 	auditLog := AuditLog{

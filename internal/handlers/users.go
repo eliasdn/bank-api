@@ -265,22 +265,19 @@ func validatePassword(password string) error {
 		return errors.New("password must be at least 8 characters long")
 	}
 
+	// Optimization: Manual byte loop is much faster than strings.ContainsAny calls in hot paths
 	var hasUpper, hasLower, hasDigit, hasSpecial bool
-
-	// Optimized to use a single byte loop instead of multiple strings.ContainsAny calls
 	for i := 0; i < len(password); i++ {
 		c := password[i]
-		if c >= 'a' && c <= 'z' {
-			hasLower = true
-		} else if c >= 'A' && c <= 'Z' {
+		switch {
+		case c >= 'A' && c <= 'Z':
 			hasUpper = true
-		} else if c >= '0' && c <= '9' {
+		case c >= 'a' && c <= 'z':
+			hasLower = true
+		case c >= '0' && c <= '9':
 			hasDigit = true
-		} else {
-			switch c {
-			case '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '-', '=', '[', ']', '{', '}', '|', ';', ':', ',', '.', '<', '>', '?':
-				hasSpecial = true
-			}
+		case strings.IndexByte("!@#$%^&*()_+-=[]{}|;:,.<>?", c) >= 0:
+			hasSpecial = true
 		}
 	}
 

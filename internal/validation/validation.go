@@ -2,7 +2,6 @@ package validation
 
 import (
 	"bank-api/internal/errors"
-	"regexp"
 	"strings"
 )
 
@@ -16,10 +15,6 @@ const (
 	MaxFullNameLength = 100
 	MinEmailLength    = 5
 	MaxEmailLength    = 255
-)
-
-var (
-	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 )
 
 // Validator provides validation methods
@@ -69,9 +64,44 @@ func (v *Validator) ValidateEmail(email string) error {
 	if len(email) < MinEmailLength || len(email) > MaxEmailLength {
 		return errors.NewValidationError("email must be between %d and %d characters", MinEmailLength, MaxEmailLength)
 	}
-	if !emailRegex.MatchString(email) {
+
+	// Fast path manual email validation
+	atIndex := strings.IndexByte(email, '@')
+	if atIndex <= 0 || atIndex == len(email)-1 {
 		return errors.NewValidationError("invalid email format")
 	}
+
+	for i := 0; i < atIndex; i++ {
+		c := email[i]
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '%' || c == '+' || c == '-') {
+			return errors.NewValidationError("invalid email format")
+		}
+	}
+
+	dotIndex := -1
+	for i := atIndex + 1; i < len(email); i++ {
+		c := email[i]
+		if c == '.' {
+			dotIndex = i
+		} else if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-') {
+			return errors.NewValidationError("invalid email format")
+		}
+	}
+
+	if dotIndex == -1 || dotIndex == atIndex+1 {
+		return errors.NewValidationError("invalid email format")
+	}
+
+	if len(email)-dotIndex-1 < 2 {
+		return errors.NewValidationError("invalid email format")
+	}
+	for i := dotIndex + 1; i < len(email); i++ {
+		c := email[i]
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+			return errors.NewValidationError("invalid email format")
+		}
+	}
+
 	return nil
 }
 

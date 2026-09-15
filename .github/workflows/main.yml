@@ -5,8 +5,11 @@ on:
 
 jobs:
   auto-merge:
-    if: github.actor == 'eliasdn' || 'google-labs-jules[bot]'
+    if: github.actor == 'jules'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Auto-merge PR
         run: gh pr merge ${{ github.event.pull_request.html_url }} --auto --merge

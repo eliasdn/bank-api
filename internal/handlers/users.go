@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
 
 	"bank-api/internal/models"
+	"bank-api/internal/validation"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -37,7 +37,8 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	}
 
 	// Validate password complexity
-	if err := validatePassword(req.Password); err != nil {
+	validator := validation.New()
+	if err := validator.ValidatePassword(req.Password); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

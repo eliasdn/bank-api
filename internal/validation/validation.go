@@ -81,17 +81,18 @@ func (v *Validator) ValidatePassword(password string) error {
 		return errors.NewValidationError("password must be between %d and %d characters", MinPasswordLength, MaxPasswordLength)
 	}
 
+	// Optimization: Manual byte loop is much faster than strings.ContainsAny calls in hot paths
 	var hasUpper, hasLower, hasNumber, hasSpecial bool
-	// Validate using a manual byte loop to avoid strings.ContainsAny overhead
 	for i := 0; i < len(password); i++ {
 		c := password[i]
-		if c >= 'a' && c <= 'z' {
-			hasLower = true
-		} else if c >= 'A' && c <= 'Z' {
+		switch {
+		case c >= 'A' && c <= 'Z':
 			hasUpper = true
-		} else if c >= '0' && c <= '9' {
+		case c >= 'a' && c <= 'z':
+			hasLower = true
+		case c >= '0' && c <= '9':
 			hasNumber = true
-		} else if strings.IndexByte(`!@#$%^&*(),.?":{}|<>`, c) >= 0 {
+		case strings.IndexByte(`!@#$%^&*(),.?":{}|<>`, c) >= 0:
 			hasSpecial = true
 		}
 	}

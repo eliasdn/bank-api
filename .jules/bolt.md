@@ -42,3 +42,10 @@
 ## 2023-10-27 - [Optimize Password Validation]
 **Learning:** Re-iterating over the same string with multiple `strings.ContainsAny` calls in a validation loop is inefficient and creates a bottleneck. A single pass using a manual byte loop to set booleans, combined with `strings.IndexByte` for a predefined special character set, significantly reduces execution time (from ~180 ns/op to ~42 ns/op).
 **Action:** Consolidate multiple validation checks into a single byte loop where possible. Prefer `strings.IndexByte` over `strings.ContainsAny` for single-character set checks during a manual loop to maximize performance while retaining readability.
+
+## 2026-09-14 - [Balancing Micro-Optimizations and Readability]
+**Learning:** When replacing `strings.ContainsAny` with a manual byte loop to avoid multiple iterations over a string, using a massive `switch` case for checking characters against a set of special characters severely impacts readability.
+**Action:** Use `strings.IndexByte("!@#$...", c) >= 0` within the manual byte loop to efficiently check if a character belongs to a specific set. This maintains the performance benefit of a single-pass loop while keeping the code concise and readable.
+## 2026-09-14 - [Avoid `strings.ContainsAny` in Hot Paths for Multiple Character Check]
+**Learning:** Checking for the presence of character classes (uppercase, lowercase, numbers, specials) using multiple calls to `strings.ContainsAny` in a hot path like password validation is less efficient than a single manual byte loop. A single manual byte loop scans the string once and performs basic ASCII comparisons, avoiding the overhead of multiple function calls and inner loop executions within `strings.ContainsAny`.
+**Action:** Replace multiple `strings.ContainsAny` checks with a single manual byte loop when validating simple string formats and character class requirements, especially in performance-sensitive parts of the application.

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -81,7 +82,7 @@ func (l *DatabaseAuditLogger) LogTransaction(userID uint, transaction *models.Tr
 		UserID:      userID,
 		Action:      transaction.TransactionType,
 		Resource:    "transaction",
-		ResourceID:  fmt.Sprintf("%d", transaction.ID),
+		ResourceID:  strconv.FormatUint(uint64(transaction.ID), 10),
 		Description: description,
 		NewValue:    string(transactionJSON),
 		IPAddress:   ipAddress,

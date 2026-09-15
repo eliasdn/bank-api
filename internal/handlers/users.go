@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"bank-api/internal/models"

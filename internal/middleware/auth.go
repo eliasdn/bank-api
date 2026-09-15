@@ -50,7 +50,17 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("userID", claims["sub"])
+		// RFC 7519 defines 'sub' as a string, but many implementations use numbers.
+		// Accommodate both string and float64 (from JSON unmarshaling).
+		if subFloat, ok := claims["sub"].(float64); ok {
+			c.Set("userID", uint(subFloat))
+		} else if subStr, ok := claims["sub"].(string); ok {
+			c.Set("userID", subStr) // keep as string to satisfy external conventions and test cases
+		} else {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in token"})
+			return
+		}
+
 		c.Next()
 	}
 }

@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"bank-api/internal/models"
+	"bank-api/internal/validation"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -38,7 +37,8 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	}
 
 	// Validate password complexity
-	if err := validatePassword(req.Password); err != nil {
+	validator := validation.New()
+	if err := validator.ValidatePassword(req.Password); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -266,10 +266,21 @@ func validatePassword(password string) error {
 		return errors.New("password must be at least 8 characters long")
 	}
 
-	hasUpper := strings.ContainsAny(password, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	hasLower := strings.ContainsAny(password, "abcdefghijklmnopqrstuvwxyz")
-	hasDigit := strings.ContainsAny(password, "0123456789")
-	hasSpecial := strings.ContainsAny(password, "!@#$%^&*()_+-=[]{}|;:,.<>?")
+	// Optimization: Manual byte loop is much faster than strings.ContainsAny calls in hot paths
+	var hasUpper, hasLower, hasDigit, hasSpecial bool
+	for i := 0; i < len(password); i++ {
+		c := password[i]
+		switch {
+		case c >= 'A' && c <= 'Z':
+			hasUpper = true
+		case c >= 'a' && c <= 'z':
+			hasLower = true
+		case c >= '0' && c <= '9':
+			hasDigit = true
+		case strings.IndexByte("!@#$%^&*()_+-=[]{}|;:,.<>?", c) >= 0:
+			hasSpecial = true
+		}
+	}
 
 	if !hasUpper {
 		return errors.New("password must contain at least one uppercase letter")

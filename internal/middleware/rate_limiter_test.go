@@ -41,7 +41,7 @@ func TestRateLimiter(t *testing.T) {
 
 		router := gin.New()
 		router.Use(func(c *gin.Context) {
-			c.Set("user_id", uint(123))
+			c.Set("userID", uint(123))
 			c.Next()
 		})
 		router.Use(rl.RateLimit())
@@ -84,7 +84,7 @@ func TestRateLimiter(t *testing.T) {
 
 		router := gin.New()
 		router.Use(func(c *gin.Context) {
-			c.Set("user_id", uint(123))
+			c.Set("userID", uint(123))
 			c.Next()
 		})
 		router.GET("/status", func(c *gin.Context) {

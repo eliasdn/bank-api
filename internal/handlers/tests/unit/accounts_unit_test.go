@@ -86,7 +86,7 @@ func (suite *AccountsUnitTestSuite) TestGetAccounts_Success() {
 }
 
 func (suite *AccountsUnitTestSuite) TestCreateAccount_Success() {
-	accountJSON := `{"account_number":"ACC003","account_type":"checking","balance":1000}`
+	accountJSON := `{"account_type":"checking"}`
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/accounts", strings.NewReader(accountJSON))
 	req.Header.Set("Content-Type", "application/json")
@@ -100,7 +100,7 @@ func (suite *AccountsUnitTestSuite) TestCreateAccount_Success() {
 	suite.db.First(&account, "user_id = ?", 1)
 	assert.NotEmpty(suite.T(), account.AccountNumber)
 	assert.Equal(suite.T(), "checking", account.AccountType)
-	assert.Equal(suite.T(), float64(1000), account.Balance)
+	assert.Equal(suite.T(), float64(0), account.Balance)
 }
 
 func (suite *AccountsUnitTestSuite) TestGetAccount_Success() {

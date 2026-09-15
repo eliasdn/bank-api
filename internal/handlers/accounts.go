@@ -30,6 +30,10 @@ func generateAccountNumber() string {
 	return string(b)
 }
 
+type CreateAccountRequest struct {
+	AccountType string `json:"account_type"`
+}
+
 func (h *Handler) GetAccounts(c *gin.Context) {
 	userIDVal, ok := c.Get("userID")
 	if !ok {
@@ -99,22 +103,23 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 		return
 	}
 
-	var account models.Account
-	if err := c.ShouldBindJSON(&account); err != nil {
+	var req CreateAccountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	account.UserID = userID
-
-	// Generate account number if not provided
-	if account.AccountNumber == "" {
-		account.AccountNumber = generateAccountNumber()
+	accountType := req.AccountType
+	// Set default account type if not provided
+	if accountType == "" {
+		accountType = "checking"
 	}
 
-	// Set default account type if not provided
-	if account.AccountType == "" {
-		account.AccountType = "checking"
+	account := models.Account{
+		UserID:        userID,
+		AccountNumber: generateAccountNumber(),
+		AccountType:   accountType,
+		Balance:       0, // Explicitly set to 0 to prevent mass assignment
 	}
 
 	if err := h.DB.Create(&account).Error; err != nil {

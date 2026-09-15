@@ -3,9 +3,13 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+permissions:
+  pull-requests: write
+  contents: write
+  
 jobs:
   auto-merge:
-    if: github.actor == 'jules'
+    if: github.actor == 'eliasdn' || 'google-labs-jules[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Auto-merge PR

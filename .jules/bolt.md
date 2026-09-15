@@ -39,6 +39,9 @@
 ## 2024-05-24 - [Avoid Regex Recompilation in Loop]
 **Learning:** `regexp.MustCompile` shouldn't be inside loops or file walk routines because the regex engine spends significant CPU cycles recompiling the same pattern for every iteration (e.g., every file parsed).
 **Action:** Always move `regexp.MustCompile` statements to global or package-level variables so they are compiled exactly once at application startup.
+## 2026-09-14 - [Fmt.Sprintf integer string formatting]
+**Learning:** `fmt.Sprintf` incurs reflection overhead for simple type formatting such as converting `uint` to `string`. For `ResourceID` generation, `fmt.Sprintf("%d", id)` was taking ~116ms per million iterations, while `strconv.FormatUint(uint64(id), 10)` took only ~39ms.
+**Action:** Replace `fmt.Sprintf` with `strconv` formatting functions (e.g., `strconv.FormatUint`) when converting numbers to strings where performance matters, avoiding the reflection overhead of `fmt`.
 ## 2023-10-27 - [Optimize Password Validation]
 **Learning:** Re-iterating over the same string with multiple `strings.ContainsAny` calls in a validation loop is inefficient and creates a bottleneck. A single pass using a manual byte loop to set booleans, combined with `strings.IndexByte` for a predefined special character set, significantly reduces execution time (from ~180 ns/op to ~42 ns/op).
 **Action:** Consolidate multiple validation checks into a single byte loop where possible. Prefer `strings.IndexByte` over `strings.ContainsAny` for single-character set checks during a manual loop to maximize performance while retaining readability.

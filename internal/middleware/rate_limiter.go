@@ -152,8 +152,19 @@ func (rl *RateLimiter) RateLimit() gin.HandlerFunc {
 		}
 
 		// Check user-based rate limiting if authenticated
-		if userID, exists := c.Get("user_id"); exists {
-			userStr := strconv.FormatUint(uint64(userID.(uint)), 10)
+		if userID, exists := c.Get("userID"); exists {
+			var userStr string
+			switch v := userID.(type) {
+			case uint:
+				userStr = strconv.FormatUint(uint64(v), 10)
+			case float64:
+				userStr = strconv.FormatFloat(v, 'f', -1, 64)
+			case string:
+				userStr = v
+			default:
+				userStr = "unknown_user"
+			}
+
 			userLimiter := rl.LimitByUser(userStr)
 			if !userLimiter.Allow() {
 				c.JSON(http.StatusTooManyRequests, gin.H{
@@ -198,8 +209,19 @@ func (rl *RateLimiter) GetRateLimitStatus(c *gin.Context) gin.H {
 		},
 	}
 
-	if userID, exists := c.Get("user_id"); exists {
-		userStr := strconv.FormatUint(uint64(userID.(uint)), 10)
+	if userID, exists := c.Get("userID"); exists {
+		var userStr string
+		switch v := userID.(type) {
+		case uint:
+			userStr = strconv.FormatUint(uint64(v), 10)
+		case float64:
+			userStr = strconv.FormatFloat(v, 'f', -1, 64)
+		case string:
+			userStr = v
+		default:
+			userStr = "unknown_user"
+		}
+
 		userLimiter := rl.LimitByUser(userStr)
 		status["user_id"] = userID
 		status["user_limit"] = gin.H{

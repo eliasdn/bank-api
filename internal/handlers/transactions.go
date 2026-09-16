@@ -204,6 +204,11 @@ func (h *Handler) Transfer(c *gin.Context) {
 		return
 	}
 
+	if fromAccount.ID == transfer.ToAccountID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot transfer to the same account"})
+		return
+	}
+
 	if fromAccount.Balance < transfer.Amount {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "insufficient funds"})
 		return

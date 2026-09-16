@@ -45,6 +45,7 @@ func (eh *ErrorHandler) HandleError(c *gin.Context, err error) {
 	var errorCode string
 	var message string
 	var details map[string]interface{}
+	var logDetails map[string]interface{}
 
 	// Determine error type and set appropriate response
 	switch e := err.(type) {
@@ -55,6 +56,7 @@ func (eh *ErrorHandler) HandleError(c *gin.Context, err error) {
 		if e.Details != nil {
 			details = map[string]interface{}{"details": e.Details}
 		}
+		logDetails = details
 	case *errors.ValidationError:
 		statusCode = http.StatusBadRequest
 		errorCode = "validation_error"
@@ -62,22 +64,25 @@ func (eh *ErrorHandler) HandleError(c *gin.Context, err error) {
 		details = map[string]interface{}{
 			"field": e.Field,
 		}
+		logDetails = details
 	case error:
-		// Default to internal server error for unknown errors
+		// Default to internal server error for unknown errors.
+		// Do not leak internal error message or stack trace to client; log it securely instead.
 		statusCode = http.StatusInternalServerError
 		errorCode = "internal_error"
 		message = "An unexpected error occurred"
-		details = map[string]interface{}{"original_error": e.Error()}
+		details = nil
+		logDetails = map[string]interface{}{"original_error": e.Error()}
 	}
 
-	// Log the error
+	// Log the error (including logDetails for server-side troubleshooting)
 	eh.logger.Error("Request error",
 		"request_id", c.GetString("request_id"),
 		"path", c.Request.URL.Path,
 		"method", c.Request.Method,
 		"error_code", errorCode,
 		"error_message", message,
-		"details", details,
+		"details", logDetails,
 		"status_code", statusCode,
 	)
 

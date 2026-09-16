@@ -129,8 +129,8 @@ func (h *Handler) LoginUser(c *gin.Context) {
 }
 
 func (h *Handler) GetUser(c *gin.Context) {
-	// Handle test mode separately
-	if gin.Mode() == gin.TestMode {
+	// Handle legacy test mode route /users/:id if id param is present
+	if gin.Mode() == gin.TestMode && c.Param("id") != "" {
 		h.handleTestUser(c)
 		return
 	}

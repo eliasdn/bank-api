@@ -17,6 +17,9 @@ type RateLimiter struct {
 	// IP-based limiters
 	ipLimiters map[string]*rate.Limiter
 	ipMutex    sync.RWMutex
+	// Strict IP-based limiters (e.g. auth endpoints)
+	authIpLimiters map[string]*rate.Limiter
+	authIpMutex    sync.RWMutex
 	// User-based limiters
 	userLimiters map[string]*rate.Limiter
 	userMutex    sync.RWMutex
@@ -27,9 +30,10 @@ type RateLimiter struct {
 // NewRateLimiter creates a new rate limiter
 func NewRateLimiter(config *config.AppConfig) *RateLimiter {
 	rl := &RateLimiter{
-		config:       config,
-		ipLimiters:   make(map[string]*rate.Limiter),
-		userLimiters: make(map[string]*rate.Limiter),
+		config:         config,
+		ipLimiters:     make(map[string]*rate.Limiter),
+		authIpLimiters: make(map[string]*rate.Limiter),
+		userLimiters:   make(map[string]*rate.Limiter),
 	}
 
 	// Start cleanup routine only if not in test mode
@@ -57,6 +61,27 @@ func (rl *RateLimiter) LimitByIP(ip string) *rate.Limiter {
 			rl.ipLimiters[ip] = limiter
 		}
 		rl.ipMutex.Unlock()
+	}
+
+	return limiter
+}
+
+// StrictLimitByIP creates or gets a strict rate limiter for the given IP
+func (rl *RateLimiter) StrictLimitByIP(ip string) *rate.Limiter {
+	rl.authIpMutex.RLock()
+	limiter, exists := rl.authIpLimiters[ip]
+	rl.authIpMutex.RUnlock()
+
+	if !exists {
+		rl.authIpMutex.Lock()
+		// Double-check after acquiring write lock
+		limiter, exists = rl.authIpLimiters[ip]
+		if !exists {
+			// 5 requests per minute per IP for sensitive endpoints
+			limiter = rate.NewLimiter(rate.Every(time.Minute), 5)
+			rl.authIpLimiters[ip] = limiter
+		}
+		rl.authIpMutex.Unlock()
 	}
 
 	return limiter
@@ -106,6 +131,27 @@ func (rl *RateLimiter) cleanupExpiredLimiters() {
 				}
 			}
 			rl.ipMutex.Unlock()
+		}
+
+		// Identify strict IP limiters to clean up
+		var authIpsToRemove []string
+		rl.authIpMutex.RLock()
+		for ip, limiter := range rl.authIpLimiters {
+			if limiter.Tokens() == 5 {
+				authIpsToRemove = append(authIpsToRemove, ip)
+			}
+		}
+		rl.authIpMutex.RUnlock()
+
+		// Remove identified strict IP limiters
+		if len(authIpsToRemove) > 0 {
+			rl.authIpMutex.Lock()
+			for _, ip := range authIpsToRemove {
+				if limiter, exists := rl.authIpLimiters[ip]; exists && limiter.Tokens() == 5 {
+					delete(rl.authIpLimiters, ip)
+				}
+			}
+			rl.authIpMutex.Unlock()
 		}
 
 		// Identify user limiters to clean up
@@ -177,6 +223,30 @@ func (rl *RateLimiter) RateLimit() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
+		}
+
+		c.Next()
+	}
+}
+
+// StrictRateLimit returns a gin middleware for strict rate limiting (e.g. auth endpoints)
+func (rl *RateLimiter) StrictRateLimit() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get client IP
+		clientIP := GetClientIP(c)
+
+		// Check strict IP-based rate limiting
+		ipLimiter := rl.StrictLimitByIP(clientIP)
+		if !ipLimiter.Allow() {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": gin.H{
+					"code":        "rate_limit_exceeded",
+					"message":     "Too many requests to this endpoint from this IP address",
+					"retry_after": "60",
+				},
+			})
+			c.Abort()
+			return
 		}
 
 		c.Next()

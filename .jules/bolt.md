@@ -56,3 +56,7 @@
 ## 2023-09-15 - Fast Path Email Validation
 **Learning:** `regexp.MustCompile` overhead for simple matching in hot paths like `ValidateEmail` takes around ~811ns per op. Using a manual byte loop to validate email formats reduces the overhead by ~94%, dropping execution time to ~46ns.
 **Action:** When performing format validation, especially in frequently executed validation rules, prefer manual byte loops over regular expressions to maximize performance.
+
+## 2026-09-15 - [Audit Log Transaction Serialization]
+**Learning:** In the audit logging package, serializing transaction logs using `json.Marshal(map[string]interface{}{...})` is significantly slower than marshaling a dedicated struct due to the reflection overhead mapping and map allocation. Furthermore, `fmt.Sprintf` incurs reflection overhead for simple string concatenations when formatting floats or integers into strings.
+**Action:** Always prefer using a dedicated struct for JSON serialization rather than `map[string]interface{}`. Use string concatenation alongside `strconv.FormatFloat` or `strconv.FormatUint` instead of `fmt.Sprintf` for constructing strings from simple primitive values in hot paths.

@@ -15,6 +15,11 @@ func InitTestDB() *gorm.DB {
 		panic("failed to create in-memory database")
 	}
 
+	sqlDB, err := gormDB.DB()
+	if err == nil {
+		sqlDB.SetMaxOpenConns(1)
+	}
+
 	// Use AutoMigrate for testing - simpler and more reliable for in-memory DB
 	if err := gormDB.AutoMigrate(
 		&models.User{},

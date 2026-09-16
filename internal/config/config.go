@@ -83,7 +83,7 @@ func LoadConfig() *AppConfig {
 	cfg.Database.ConnMaxIdleTime = getDuration("DB_CONN_MAX_IDLE_TIME", 300*time.Second)
 
 	// JWT configuration
-	cfg.JWT.Secret = getEnv("JWT_SECRET", "your-secret-key-change-this-in-production")
+	cfg.JWT.Secret = getEnv("JWT_SECRET", "")
 	cfg.JWT.Expiration = getDuration("JWT_EXPIRATION", 24*time.Hour)
 
 	// Security configuration
@@ -97,8 +97,8 @@ func LoadConfig() *AppConfig {
 	cfg.Logging.Level = getEnv("LOG_LEVEL", "info")
 
 	// Validate required configuration
-	if cfg.JWT.Secret == "your-secret-key-change-this-in-production" && cfg.Environment == "production" {
-		log.Fatal("JWT_SECRET must be set in production environment")
+	if cfg.JWT.Secret == "" {
+		log.Fatal("JWT_SECRET must be set")
 	}
 
 	return cfg

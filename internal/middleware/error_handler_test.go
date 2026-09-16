@@ -85,6 +85,22 @@ func TestErrorHandler(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "internal_error")
 		assert.Contains(t, w.Body.String(), "An unexpected error occurred")
+		assert.NotContains(t, w.Body.String(), "original_error")
+		assert.NotContains(t, w.Body.String(), assert.AnError.Error())
+
+		// Verify logger captured internal details
+		assert.Contains(t, mockLogger.LastMessage, "Request error")
+		var foundOriginalErr bool
+		for i := 0; i < len(mockLogger.LastFields); i += 2 {
+			if mockLogger.LastFields[i] == "details" {
+				if details, ok := mockLogger.LastFields[i+1].(map[string]interface{}); ok {
+					if origErr, ok := details["original_error"].(string); ok && origErr == assert.AnError.Error() {
+						foundOriginalErr = true
+					}
+				}
+			}
+		}
+		assert.True(t, foundOriginalErr, "Logger should capture original_error in details")
 	})
 
 	t.Run("ErrorHandlerMiddleware", func(t *testing.T) {

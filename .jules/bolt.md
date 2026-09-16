@@ -69,3 +69,6 @@
 ## 2024-05-18 - [Email Validation Performance Boost]
 **Learning:** Using `regexp.MustCompile` and `MatchString` for string validations in hot paths adds significant performance overhead. A single manual byte loop check for email validation can be up to 10x faster. Additionally, duplicating logic leads to unoptimized methods being used when optimized versions already exist elsewhere in the codebase.
 **Action:** Always check if a highly-optimized manual check exists centrally (like in `internal/validation/validation.go`) before resorting to regular expressions. Remove unused regex compilations to save memory and initialization time.
+## 2026-09-16 - Zero Allocation String Set Validation
+**Learning:** Initializing a local map `map[string]bool{...}` in a function to check a string against a fixed set of values is a performance anti-pattern in Go, as it forces heap allocation and population of the map on every function call.
+**Action:** Always use a `switch` statement for fixed set string validation. It compiles down to fast string comparisons with exactly zero allocations.

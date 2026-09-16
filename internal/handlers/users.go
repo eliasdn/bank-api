@@ -9,9 +9,6 @@ import (
 
 	"bank-api/internal/models"
 	"bank-api/internal/validation"
-	"errors"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"

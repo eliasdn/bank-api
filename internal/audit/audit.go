@@ -3,7 +3,6 @@ package audit
 import (
 	"bank-api/internal/models"
 	"encoding/json"
-	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -65,7 +64,7 @@ func (l *DatabaseAuditLogger) LogAction(userID uint, action, resource, resourceI
 
 // LogTransaction logs a financial transaction
 func (l *DatabaseAuditLogger) LogTransaction(userID uint, transaction *models.Transaction, account *models.Account, ipAddress, userAgent string) error {
-	description := fmt.Sprintf("%s of %.2f on account %s", transaction.TransactionType, transaction.Amount, account.AccountNumber)
+	description := transaction.TransactionType + " of " + strconv.FormatFloat(transaction.Amount, 'f', 2, 64) + " on account " + account.AccountNumber
 
 	transactionJSON, _ := json.Marshal(map[string]interface{}{
 		"transaction_id": transaction.ID,

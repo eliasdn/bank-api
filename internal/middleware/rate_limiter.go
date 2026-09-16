@@ -253,11 +253,6 @@ func (rl *RateLimiter) StrictRateLimit() gin.HandlerFunc {
 	}
 }
 
-// getClientIP extracts the real client IP from the request
-func (rl *RateLimiter) getClientIP(c *gin.Context) string {
-	return GetClientIP(c)
-}
-
 // StopCleanup stops the cleanup routine
 func (rl *RateLimiter) StopCleanup() {
 	if rl.cleanupTicker != nil {

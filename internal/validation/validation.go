@@ -156,15 +156,12 @@ func (v *Validator) ValidateFullName(fullName string) error {
 
 // ValidateAccountType validates account type
 func (v *Validator) ValidateAccountType(accountType string) error {
-	validTypes := map[string]bool{
-		"checking": true,
-		"savings":  true,
-		"credit":   true,
-	}
-	if !validTypes[accountType] {
+	switch accountType {
+	case "checking", "savings", "credit":
+		return nil
+	default:
 		return errors.NewValidationError("account type must be one of: checking, savings, credit")
 	}
-	return nil
 }
 
 // ValidateAmount validates transaction amount
@@ -180,15 +177,12 @@ func (v *Validator) ValidateAmount(amount float64) error {
 
 // ValidateTransactionType validates transaction type
 func (v *Validator) ValidateTransactionType(transactionType string) error {
-	validTypes := map[string]bool{
-		"deposit":    true,
-		"withdrawal": true,
-		"transfer":   true,
-	}
-	if !validTypes[transactionType] {
+	switch transactionType {
+	case "deposit", "withdrawal", "transfer":
+		return nil
+	default:
 		return errors.NewValidationError("transaction type must be one of: deposit, withdrawal, transfer")
 	}
-	return nil
 }
 
 // ValidateTransfer validates transfer details

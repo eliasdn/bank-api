@@ -406,11 +406,12 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
           example: john.doe@example.com
         password:
           type: string
           minLength: 8
-          maxLength: 128
+          maxLength: 100
           example: SecurePass123!
         full_name:
           type: string
@@ -440,11 +441,6 @@ components:
           type: string
           enum: [checking, savings, credit]
           example: checking
-        initial_balance:
-          type: number
-          minimum: 0
-          default: 0
-          example: 1000.00
 
     TransactionRequest:
       type: object
@@ -491,6 +487,7 @@ components:
           example: johndoe
         email:
           type: string
+          maxLength: 255
           example: john.doe@example.com
         full_name:
           type: string

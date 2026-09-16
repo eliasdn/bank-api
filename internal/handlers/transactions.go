@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Deposit handles deposit transactions
@@ -46,10 +47,16 @@ func (h *Handler) Deposit(c *gin.Context) {
 	}()
 
 	// Update account balance
-	newBalance := account.Balance + deposit.Amount
-	if err := tx.Model(&account).Update("balance", newBalance).Error; err != nil {
+	if err := tx.Model(&account).UpdateColumn("balance", gorm.Expr("balance + ?", deposit.Amount)).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update balance"})
+		return
+	}
+
+	// Reload account to get the new balance
+	if err := tx.First(&account, account.ID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reload account"})
 		return
 	}
 
@@ -83,7 +90,7 @@ func (h *Handler) Deposit(c *gin.Context) {
 
 	response := dto.DepositResponse{
 		Message:       "Deposit successful",
-		Balance:       newBalance,
+		Balance:       account.Balance,
 		TransactionID: transaction.ID,
 	}
 	c.JSON(http.StatusOK, response)
@@ -131,10 +138,22 @@ func (h *Handler) Withdraw(c *gin.Context) {
 	}()
 
 	// Update account balance
-	newBalance := account.Balance - withdrawal.Amount
-	if err := tx.Model(&account).Update("balance", newBalance).Error; err != nil {
+	res := tx.Model(&account).Where("balance >= ?", withdrawal.Amount).UpdateColumn("balance", gorm.Expr("balance - ?", withdrawal.Amount))
+	if res.Error != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update balance"})
+		return
+	}
+	if res.RowsAffected == 0 {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "insufficient funds"})
+		return
+	}
+
+	// Reload account to get the new balance
+	if err := tx.First(&account, account.ID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reload account"})
 		return
 	}
 
@@ -168,7 +187,7 @@ func (h *Handler) Withdraw(c *gin.Context) {
 
 	response := dto.WithdrawResponse{
 		Message:       "Withdrawal successful",
-		Balance:       newBalance,
+		Balance:       account.Balance,
 		TransactionID: transaction.ID,
 	}
 	c.JSON(http.StatusOK, response)
@@ -230,16 +249,34 @@ func (h *Handler) Transfer(c *gin.Context) {
 	}()
 
 	// Update source account
-	if err := tx.Model(&fromAccount).Update("balance", fromAccount.Balance-transfer.Amount).Error; err != nil {
+	res := tx.Model(&fromAccount).Where("balance >= ?", transfer.Amount).UpdateColumn("balance", gorm.Expr("balance - ?", transfer.Amount))
+	if res.Error != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update source account"})
 		return
 	}
+	if res.RowsAffected == 0 {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "insufficient funds"})
+		return
+	}
 
 	// Update destination account
-	if err := tx.Model(&toAccount).Update("balance", toAccount.Balance+transfer.Amount).Error; err != nil {
+	if err := tx.Model(&toAccount).UpdateColumn("balance", gorm.Expr("balance + ?", transfer.Amount)).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update destination account"})
+		return
+	}
+
+	// Reload accounts to get accurate balances
+	if err := tx.First(&fromAccount, fromAccount.ID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reload source account"})
+		return
+	}
+	if err := tx.First(&toAccount, toAccount.ID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reload destination account"})
 		return
 	}
 
@@ -290,8 +327,8 @@ func (h *Handler) Transfer(c *gin.Context) {
 
 	response := dto.TransferResponse{
 		Message:       "Transfer successful",
-		FromBalance:   fromAccount.Balance - transfer.Amount,
-		ToBalance:     toAccount.Balance + transfer.Amount,
+		FromBalance:   fromAccount.Balance,
+		ToBalance:     toAccount.Balance,
 		TransactionID: outgoingTx.ID,
 	}
 	c.JSON(http.StatusOK, response)

@@ -145,7 +145,7 @@ func TestGetClientIP(t *testing.T) {
 			var actualIP string
 
 			router.GET("/test", func(c *gin.Context) {
-				actualIP = rl.getClientIP(c)
+				actualIP = GetClientIP(c)
 				c.JSON(http.StatusOK, gin.H{"ip": actualIP})
 			})
 

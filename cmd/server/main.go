@@ -76,6 +76,8 @@ func main() {
 
 		// Authentication routes
 		auth := api.Group("/auth")
+		// Use strict rate limiting for authentication routes
+		auth.Use(rateLimiter.StrictRateLimit())
 		auth.Use(authMiddleware.Authenticate())
 		{
 			auth.POST("/register", h.RegisterUser)

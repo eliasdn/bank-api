@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
-	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"bank-api/internal/models"
@@ -16,8 +17,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
-
-var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
 type RegisterRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=50"`
@@ -219,7 +218,8 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		user.FullName = updateData.FullName
 	}
 	if updateData.Email != "" {
-		if !emailRegex.MatchString(updateData.Email) {
+		validator := validation.New()
+		if err := validator.ValidateEmail(updateData.Email); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email format"})
 			return
 		}

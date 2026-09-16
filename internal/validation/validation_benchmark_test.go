@@ -1,12 +1,21 @@
 package validation
 
-import "testing"
+import (
+	"testing"
+)
 
-func BenchmarkValidatePassword(b *testing.B) {
+func BenchmarkValidateAccountType(b *testing.B) {
 	v := New()
-	password := "StrongP@ssw0rd!"
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		v.ValidatePassword(password)
+		v.ValidateAccountType("savings")
+	}
+}
+
+func BenchmarkValidateTransactionType(b *testing.B) {
+	v := New()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		v.ValidateTransactionType("deposit")
 	}
 }

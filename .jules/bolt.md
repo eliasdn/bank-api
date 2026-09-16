@@ -52,7 +52,20 @@
 ## 2026-09-14 - [Avoid `strings.ContainsAny` in Hot Paths for Multiple Character Check]
 **Learning:** Checking for the presence of character classes (uppercase, lowercase, numbers, specials) using multiple calls to `strings.ContainsAny` in a hot path like password validation is less efficient than a single manual byte loop. A single manual byte loop scans the string once and performs basic ASCII comparisons, avoiding the overhead of multiple function calls and inner loop executions within `strings.ContainsAny`.
 **Action:** Replace multiple `strings.ContainsAny` checks with a single manual byte loop when validating simple string formats and character class requirements, especially in performance-sensitive parts of the application.
+## 2026-09-16 - [Replace string(rune(int)) with strconv.FormatUint]
+**Learning:** Casting a numeric ID (like `uint`) to `rune` and then to `string` using `string(rune(id))` correctly interprets the numeric ID as a Unicode code point, producing the corresponding character (e.g. `string(rune(65))` results in `"A"`), which is almost certainly not the intended behavior when trying to log a numeric string like `"65"`. This is both a logic bug and a performance bottleneck if used in logging or hot paths. Using `strconv.FormatUint(uint64(id), 10)` is the correct and performant way to convert integers to their string representations without using reflection or accidentally getting Unicode characters.
+**Action:** Always replace `string(rune(id))` with `strconv.FormatUint` (or `strconv.Itoa`/`strconv.FormatInt`) when the goal is to convert an integer ID to a string.
+## 2026-09-16 - [Optimize formatting floats]
+**Learning:** For performance sensitive code paths, using string concatenation alongside `strconv.FormatFloat` can provide a performance benefit over `fmt.Sprintf` due to eliminating reflection overhead.
+**Action:** In places that run frequently, replace `fmt.Sprintf("%s %.2f", str, float)` with string concatenation and `strconv.FormatFloat(float, 'f', 2, 64)`
 
 ## 2023-09-15 - Fast Path Email Validation
 **Learning:** `regexp.MustCompile` overhead for simple matching in hot paths like `ValidateEmail` takes around ~811ns per op. Using a manual byte loop to validate email formats reduces the overhead by ~94%, dropping execution time to ~46ns.
 **Action:** When performing format validation, especially in frequently executed validation rules, prefer manual byte loops over regular expressions to maximize performance.
+
+## 2026-09-15 - [Audit Log Transaction Serialization]
+**Learning:** In the audit logging package, serializing transaction logs using `json.Marshal(map[string]interface{}{...})` is significantly slower than marshaling a dedicated struct due to the reflection overhead mapping and map allocation. Furthermore, `fmt.Sprintf` incurs reflection overhead for simple string concatenations when formatting floats or integers into strings.
+**Action:** Always prefer using a dedicated struct for JSON serialization rather than `map[string]interface{}`. Use string concatenation alongside `strconv.FormatFloat` or `strconv.FormatUint` instead of `fmt.Sprintf` for constructing strings from simple primitive values in hot paths.
+## 2024-05-18 - [Email Validation Performance Boost]
+**Learning:** Using `regexp.MustCompile` and `MatchString` for string validations in hot paths adds significant performance overhead. A single manual byte loop check for email validation can be up to 10x faster. Additionally, duplicating logic leads to unoptimized methods being used when optimized versions already exist elsewhere in the codebase.
+**Action:** Always check if a highly-optimized manual check exists centrally (like in `internal/validation/validation.go`) before resorting to regular expressions. Remove unused regex compilations to save memory and initialization time.

@@ -3,6 +3,7 @@ package services
 import (
 	"bank-api/internal/audit"
 	"bank-api/internal/models"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -49,12 +50,12 @@ func (s *AuditService) LogTransaction(c *gin.Context, userID uint, transaction *
 
 // LogUserAction logs user-related actions
 func (s *AuditService) LogUserAction(c *gin.Context, userID uint, action string, oldUser, newUser *models.User) error {
-	return s.LogAction(c, userID, action, "user", string(rune(userID)), "User action", oldUser, newUser)
+	return s.LogAction(c, userID, action, "user", strconv.FormatUint(uint64(userID), 10), "User action", oldUser, newUser)
 }
 
 // LogAccountAction logs account-related actions
 func (s *AuditService) LogAccountAction(c *gin.Context, userID uint, action string, oldAccount, newAccount *models.Account) error {
-	return s.LogAction(c, userID, action, "account", string(rune(newAccount.ID)), "Account action", oldAccount, newAccount)
+	return s.LogAction(c, userID, action, "account", strconv.FormatUint(uint64(newAccount.ID), 10), "Account action", oldAccount, newAccount)
 }
 
 // LogAccountCreation logs account creation
@@ -67,7 +68,7 @@ func (s *AuditService) LogUserRegistration(c *gin.Context, user *models.User) er
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
-	return s.logger.LogAction(user.ID, "register", "user", string(rune(user.ID)), "User registered", nil, user, ipAddress, userAgent)
+	return s.logger.LogAction(user.ID, "register", "user", strconv.FormatUint(uint64(user.ID), 10), "User registered", nil, user, ipAddress, userAgent)
 }
 
 // GetUserIDFromContext extracts user ID from gin context

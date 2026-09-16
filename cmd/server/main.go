@@ -83,6 +83,15 @@ func main() {
 			auth.POST("/login", h.LoginUser)
 		}
 
+		// User routes (protected)
+		users := api.Group("/users")
+		users.Use(authMiddleware.Authenticate())
+		{
+			users.GET("/me", h.GetUser)
+			users.PUT("/me", h.UpdateUser)
+			users.DELETE("/me", h.DeleteUser)
+		}
+
 		// Account routes (protected)
 		accounts := api.Group("/accounts")
 		accounts.Use(authMiddleware.Authenticate())

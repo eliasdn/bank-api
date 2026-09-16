@@ -2,23 +2,24 @@ package handlers
 
 import (
 	"bank-api/internal/models"
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
-// generateAccountNumber generates a random 9-character account number.
+// generateAccountNumber generates a cryptographically secure random 9-character account number.
+// Uses crypto/rand instead of math/rand to prevent predictable account number generation.
 // Optimized to avoid fmt.Sprintf overhead by formatting directly into a byte slice.
 func generateAccountNumber() string {
-	n := rand.Intn(1000000)
+	nBig, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	var n int
+	if err == nil {
+		n = int(nBig.Int64())
+	}
 	b := make([]byte, 9)
 	b[0] = 'A'
 	b[1] = 'C'

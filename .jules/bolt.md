@@ -52,6 +52,12 @@
 ## 2026-09-14 - [Avoid `strings.ContainsAny` in Hot Paths for Multiple Character Check]
 **Learning:** Checking for the presence of character classes (uppercase, lowercase, numbers, specials) using multiple calls to `strings.ContainsAny` in a hot path like password validation is less efficient than a single manual byte loop. A single manual byte loop scans the string once and performs basic ASCII comparisons, avoiding the overhead of multiple function calls and inner loop executions within `strings.ContainsAny`.
 **Action:** Replace multiple `strings.ContainsAny` checks with a single manual byte loop when validating simple string formats and character class requirements, especially in performance-sensitive parts of the application.
+## 2026-09-16 - [Replace string(rune(int)) with strconv.FormatUint]
+**Learning:** Casting a numeric ID (like `uint`) to `rune` and then to `string` using `string(rune(id))` correctly interprets the numeric ID as a Unicode code point, producing the corresponding character (e.g. `string(rune(65))` results in `"A"`), which is almost certainly not the intended behavior when trying to log a numeric string like `"65"`. This is both a logic bug and a performance bottleneck if used in logging or hot paths. Using `strconv.FormatUint(uint64(id), 10)` is the correct and performant way to convert integers to their string representations without using reflection or accidentally getting Unicode characters.
+**Action:** Always replace `string(rune(id))` with `strconv.FormatUint` (or `strconv.Itoa`/`strconv.FormatInt`) when the goal is to convert an integer ID to a string.
+## 2026-09-16 - [Optimize formatting floats]
+**Learning:** For performance sensitive code paths, using string concatenation alongside `strconv.FormatFloat` can provide a performance benefit over `fmt.Sprintf` due to eliminating reflection overhead.
+**Action:** In places that run frequently, replace `fmt.Sprintf("%s %.2f", str, float)` with string concatenation and `strconv.FormatFloat(float, 'f', 2, 64)`
 
 ## 2023-09-15 - Fast Path Email Validation
 **Learning:** `regexp.MustCompile` overhead for simple matching in hot paths like `ValidateEmail` takes around ~811ns per op. Using a manual byte loop to validate email formats reduces the overhead by ~94%, dropping execution time to ~46ns.

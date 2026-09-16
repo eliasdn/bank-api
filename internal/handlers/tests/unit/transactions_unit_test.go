@@ -310,6 +310,15 @@ func TestTransfer(t *testing.T) {
 			expectedStatus: http.StatusUnauthorized,
 			setupAuth:      false,
 		},
+		{
+			name:           "self transfer",
+			fromAccountID:  "1",
+			toAccountID:    1,
+			amount:         100.0,
+			description:    "Test self transfer",
+			expectedStatus: http.StatusBadRequest,
+			setupAuth:      true,
+		},
 	}
 
 	for _, tt := range tests {

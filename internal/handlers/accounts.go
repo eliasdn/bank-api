@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bank-api/internal/models"
+	"bank-api/internal/validation"
 	"crypto/rand"
 	"math/big"
 	"net/http"
@@ -119,6 +120,12 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 	// Set default account type if not provided
 	if accountType == "" {
 		accountType = "checking"
+	}
+
+	validator := validation.New()
+	if err := validator.ValidateAccountType(accountType); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	account := models.Account{

@@ -34,9 +34,9 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// Validate password complexity
+	// Validate registration input
 	validator := validation.New()
-	if err := validator.ValidatePassword(req.Password); err != nil {
+	if err := validator.ValidateUserRegistration(req.Username, req.Email, req.Password, req.FullName); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

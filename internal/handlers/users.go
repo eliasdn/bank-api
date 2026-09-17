@@ -211,11 +211,15 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		return
 	}
 
+	validator := validation.New()
 	if updateData.FullName != "" {
+		if err := validator.ValidateFullName(updateData.FullName); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		user.FullName = updateData.FullName
 	}
 	if updateData.Email != "" {
-		validator := validation.New()
 		if err := validator.ValidateEmail(updateData.Email); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email format"})
 			return

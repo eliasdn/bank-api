@@ -82,3 +82,6 @@
 ## 2026-09-17 - Optimize Cache Key in GetTransactions
 **Learning:** Passing raw URL parameters as strings to cache keys introduces overhead from integer parsing (`strconv.ParseUint`) and reflection when a database model object (like `account.ID` of type `uint`) has already been fetched and can be used directly.
 **Action:** Always reuse strongly-typed fields from already-fetched GORM models instead of re-parsing string parameters for operations like caching.
+## 2026-09-17 - DRY Performance Optimization
+**Learning:** When duplicating highly-optimized methods (like custom manual byte loops) across packages (e.g., in handlers and validation packages), we can introduce unused imports or broken benchmarks when we try to clean it up. Keeping performance-optimized functions centralized in one logical package (like `internal/validation/validation.go`) prevents these issues.
+**Action:** Always centralize optimized logic and reuse it across the application instead of duplicating it. When performing deduplication refactors, make sure to clean up any related benchmarks or test references in the removed locations and migrate them to the centralized location.

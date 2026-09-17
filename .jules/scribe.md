@@ -1,3 +1,6 @@
 ## 2026-09-16 - Email validation and Max Length Documentation Drift
 **Learning:** Recent code updates to `internal/validation/validation.go` and `internal/handlers/users.go` modified validation logic and enforced max lengths (255 for emails and 100 for passwords). Additionally, mass assignment fixes removed `initial_balance` from `CreateAccountRequest`. However, `docs/openapi.yaml` did not reflect these changes, missing the max length for emails, specifying 128 instead of 100 for passwords, and still including `initial_balance`.
 **Action:** When auditing documentation after codebase changes, thoroughly review all modified structures (DTOs, validation rules) and update their corresponding schemas in `docs/openapi.yaml` to ensure field presence and constraints match the running code.
+## 2026-09-17 - Cleaning Tooling Artifacts
+**Learning:** Using temporary shell scripts (like `patch_*.sh`) and intermediate files (like `tmp.md` or `tmp.yaml`) to automate file editing is useful, but staging or committing them polls the repository.
+**Action:** Always ensure any tooling artifacts or temporary patching scripts are removed (`rm`) and unstaged before requesting code review or submitting a pull request.

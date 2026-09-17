@@ -369,19 +369,16 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 	// Get total count
 	var total int64
 
-	// Convert accountID string to uint to use as cache key
-	accID, _ := strconv.ParseUint(accountID, 10, 64)
-
-	if val, ok := h.TxCountCache.Load(uint(accID)); ok {
+	if val, ok := h.TxCountCache.Load(account.ID); ok {
 		total = val.(int64)
 	} else {
-		h.DB.Model(&models.Transaction{}).Where("account_id = ?", accountID).Count(&total)
-		h.TxCountCache.Store(uint(accID), total)
+		h.DB.Model(&models.Transaction{}).Where("account_id = ?", account.ID).Count(&total)
+		h.TxCountCache.Store(account.ID, total)
 	}
 
 	// Get paginated transactions
 	var transactions []models.Transaction
-	if err := h.DB.Where("account_id = ?", accountID).
+	if err := h.DB.Where("account_id = ?", account.ID).
 		Order("created_at desc").
 		Limit(limit).
 		Offset(offset).

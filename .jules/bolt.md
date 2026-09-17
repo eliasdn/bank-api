@@ -75,3 +75,6 @@
 ## 2026-09-17 - [Eliminating reflection overhead in error formatting]
 **Learning:** For formatting strings that involve errors or simple concatenation in hot paths, using `fmt.Sprintf("%s: %v", ...)` introduces unnecessary runtime reflection overhead due to the `%v` verb and internal parsing.
 **Action:** Always prefer native string concatenation (e.g., `e.Message + ": " + e.Err.Error()`) over `fmt.Sprintf` for simple combinations of strings and errors to improve performance and reduce allocations.
+## 2026-09-17 - Optimize Cache Key in GetTransactions
+**Learning:** Passing raw URL parameters as strings to cache keys introduces overhead from integer parsing (`strconv.ParseUint`) and reflection when a database model object (like `account.ID` of type `uint`) has already been fetched and can be used directly.
+**Action:** Always reuse strongly-typed fields from already-fetched GORM models instead of re-parsing string parameters for operations like caching.

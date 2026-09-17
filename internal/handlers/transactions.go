@@ -3,6 +3,7 @@ package handlers
 import (
 	"bank-api/internal/dto"
 	"bank-api/internal/models"
+	"bank-api/internal/validation"
 	"net/http"
 	"strconv"
 
@@ -35,6 +36,12 @@ func (h *Handler) Deposit(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&deposit); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid deposit amount"})
+		return
+	}
+
+	validator := validation.New()
+	if err := validator.ValidateAmount(deposit.Amount); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -121,6 +128,12 @@ func (h *Handler) Withdraw(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&withdrawal); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid withdrawal amount"})
+		return
+	}
+
+	validator := validation.New()
+	if err := validator.ValidateAmount(withdrawal.Amount); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -220,6 +233,12 @@ func (h *Handler) Transfer(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&transfer); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid transfer request"})
+		return
+	}
+
+	validator := validation.New()
+	if err := validator.ValidateAmount(transfer.Amount); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

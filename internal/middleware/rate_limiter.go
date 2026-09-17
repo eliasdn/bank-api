@@ -186,6 +186,7 @@ func (rl *RateLimiter) RateLimit() gin.HandlerFunc {
 		// Check IP-based rate limiting
 		ipLimiter := rl.LimitByIP(clientIP)
 		if !ipLimiter.Allow() {
+			c.Header("Retry-After", "60")
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error": gin.H{
 					"code":        "rate_limit_exceeded",
@@ -213,6 +214,7 @@ func (rl *RateLimiter) RateLimit() gin.HandlerFunc {
 
 			userLimiter := rl.LimitByUser(userStr)
 			if !userLimiter.Allow() {
+				c.Header("Retry-After", "3600")
 				c.JSON(http.StatusTooManyRequests, gin.H{
 					"error": gin.H{
 						"code":        "rate_limit_exceeded",
@@ -238,6 +240,7 @@ func (rl *RateLimiter) StrictRateLimit() gin.HandlerFunc {
 		// Check strict IP-based rate limiting
 		ipLimiter := rl.StrictLimitByIP(clientIP)
 		if !ipLimiter.Allow() {
+			c.Header("Retry-After", "60")
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error": gin.H{
 					"code":        "rate_limit_exceeded",

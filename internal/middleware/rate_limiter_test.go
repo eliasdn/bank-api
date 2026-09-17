@@ -33,6 +33,45 @@ func TestRateLimiter(t *testing.T) {
 			router.ServeHTTP(w, req)
 			assert.Equal(t, http.StatusOK, w.Code)
 		}
+
+		// Exhaust rate limiter tokens (limit is 100)
+		for i := 0; i < 100; i++ {
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+		}
+
+		// Exceeded limit request
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusTooManyRequests, w.Code)
+		assert.Equal(t, "60", w.Header().Get("Retry-After"))
+	})
+
+	t.Run("Strict rate limiting with Retry-After header", func(t *testing.T) {
+		rl := NewRateLimiter(&config.AppConfig{})
+		defer rl.StopCleanup()
+
+		router := gin.New()
+		router.Use(rl.StrictRateLimit())
+		router.POST("/login", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "success"})
+		})
+
+		req := httptest.NewRequest(http.MethodPost, "/login", nil)
+		req.RemoteAddr = "10.0.0.1:12345"
+
+		// Limit is 5
+		for i := 0; i < 5; i++ {
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			assert.Equal(t, http.StatusOK, w.Code)
+		}
+
+		// 6th request should be rate limited and set Retry-After header
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusTooManyRequests, w.Code)
+		assert.Equal(t, "60", w.Header().Get("Retry-After"))
 	})
 
 	t.Run("User-based rate limiting", func(t *testing.T) {

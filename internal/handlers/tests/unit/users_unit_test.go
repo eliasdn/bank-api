@@ -5,6 +5,7 @@ import (
 	"bank-api/internal/db"
 	"bank-api/internal/handlers"
 	"bank-api/internal/models"
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -41,6 +42,25 @@ func (suite *UsersUnitTestSuite) SetupTest() {
 
 	// Register test routes without auth middleware
 	suite.router.GET("/users/:id", suite.handler.GetUser)
+	suite.router.POST("/register", suite.handler.RegisterUser)
+}
+
+func (suite *UsersUnitTestSuite) TestRegisterUser_ValidationFailure() {
+	// Test registration with invalid username characters (e.g., spaces or special symbols)
+	invalidReq := map[string]string{
+		"username": "invalid user!",
+		"email":    "user@example.com",
+		"password": "Password123!",
+		"fullName": "Test User",
+	}
+	body, _ := json.Marshal(invalidReq)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 
 func (suite *UsersUnitTestSuite) TestGetUser_Success() {

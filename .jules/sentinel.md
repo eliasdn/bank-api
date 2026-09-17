@@ -39,3 +39,8 @@
 **Vulnerability:** The login endpoint exhibited a timing attack vulnerability. If a username was not found in the database, the server returned an error immediately, skipping the computationally expensive `bcrypt` password check. Attackers could measure response times to enumerate valid usernames.
 **Learning:** Returning early upon user lookup failure creates measurable timing differences that reveal whether an account exists, a classic username enumeration vector.
 **Prevention:** To prevent username enumeration via timing attacks during authentication, login handlers must simulate password hashing (e.g., using `bcrypt.GenerateFromPassword`) when a user is not found, ensuring response times remain constant regardless of username validity.
+
+## 2026-09-17 - Information Leakage via API Response
+**Vulnerability:** The `Transfer` endpoint leaked the exact balance of the destination account in the API response `TransferResponse`. By making small transfers, any user could query the exact account balance of another user, resulting in a critical Information Leakage/Insecure Direct Object Reference (IDOR) vulnerability.
+**Learning:** Returning struct models directly or over-sharing data in Response DTOs can easily leak sensitive information across user boundaries in multi-tenant or multi-user applications.
+**Prevention:** Design Response DTOs carefully. When performing actions that affect resources owned by other users (like transfers), ensure the API response explicitly omits sensitive data about those third-party resources (such as `ToBalance`).

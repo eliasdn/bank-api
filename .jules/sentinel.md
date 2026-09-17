@@ -30,3 +30,8 @@
 **Vulnerability:** The transaction endpoints (`Deposit`, `Withdraw`, `Transfer`) calculated new balances by reading the current balance, performing in-memory math, and writing a static value back. This created a severe Time-of-Check to Time-of-Use (TOCTOU) race condition where concurrent requests could overwrite each other, leading to double spending or lost deposits.
 **Learning:** Using standard ORM assignment (`account.Balance = account.Balance - amount`) is not concurrency-safe in high-stakes environments without explicit locks.
 **Prevention:** To prevent TOCTOU race conditions in financial transactions using GORM, use atomic SQL updates with conditions (e.g., `UpdateColumn("balance", gorm.Expr("balance - ?", amount))`) and verify `RowsAffected` rather than performing in-memory math.
+
+## 2026-09-17 - Authentication denial for numeric string JWT subject claims
+**Vulnerability:** Standard RFC 7519 JWT tokens containing string-formatted numeric subject claims (`"123"`) were stored as strings in Gin context, causing downstream handlers expecting `uint` user IDs to reject requests with `401 Unauthorized` or type assertion failures.
+**Learning:** Middleware storing untyped claims in request contexts must parse string representations of numeric IDs into typed primitives before handing off to downstream handlers that rely on strong typing.
+**Prevention:** In JWT authentication middleware, attempt `strconv.ParseUint` on string `sub` claims to set typed numeric values in context while retaining non-numeric strings for external identifiers.

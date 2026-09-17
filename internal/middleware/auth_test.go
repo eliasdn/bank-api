@@ -88,6 +88,21 @@ func TestAuthMiddleware(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectUserID:   "user123",
 		},
+		{
+			name: "Successful authentication with numeric string sub claim",
+			setupRequest: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/", nil)
+				token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+					"sub": "42",
+					"exp": time.Now().Add(time.Hour).Unix(),
+				})
+				tokenString, _ := token.SignedString([]byte("test-secret"))
+				req.Header.Set("Authorization", "Bearer "+tokenString)
+				return req
+			},
+			expectedStatus: http.StatusOK,
+			expectUserID:   uint(42),
+		},
 	}
 
 	for _, tt := range tests {

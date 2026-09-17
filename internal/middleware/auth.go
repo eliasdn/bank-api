@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"bank-api/internal/config"
@@ -51,11 +52,16 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		}
 
 		// RFC 7519 defines 'sub' as a string, but many implementations use numbers.
-		// Accommodate both string and float64 (from JSON unmarshaling).
+		// Accommodate float64 and numeric strings (converting to uint for DB lookups),
+		// while preserving non-numeric strings for external conventions.
 		if subFloat, ok := claims["sub"].(float64); ok {
 			c.Set("userID", uint(subFloat))
 		} else if subStr, ok := claims["sub"].(string); ok {
-			c.Set("userID", subStr) // keep as string to satisfy external conventions and test cases
+			if id, err := strconv.ParseUint(subStr, 10, 64); err == nil {
+				c.Set("userID", uint(id))
+			} else {
+				c.Set("userID", subStr)
+			}
 		} else {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in token"})
 			return

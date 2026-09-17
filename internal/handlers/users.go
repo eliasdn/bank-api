@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"bank-api/internal/models"
@@ -264,39 +262,3 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 }
 
 // validatePassword validates password complexity requirements
-func validatePassword(password string) error {
-	if len(password) < 8 {
-		return errors.New("password must be at least 8 characters long")
-	}
-
-	// Optimization: Manual byte loop is much faster than strings.ContainsAny calls in hot paths
-	var hasUpper, hasLower, hasDigit, hasSpecial bool
-	for i := 0; i < len(password); i++ {
-		c := password[i]
-		switch {
-		case c >= 'A' && c <= 'Z':
-			hasUpper = true
-		case c >= 'a' && c <= 'z':
-			hasLower = true
-		case c >= '0' && c <= '9':
-			hasDigit = true
-		case strings.IndexByte("!@#$%^&*()_+-=[]{}|;:,.<>?", c) >= 0:
-			hasSpecial = true
-		}
-	}
-
-	if !hasUpper {
-		return errors.New("password must contain at least one uppercase letter")
-	}
-	if !hasLower {
-		return errors.New("password must contain at least one lowercase letter")
-	}
-	if !hasDigit {
-		return errors.New("password must contain at least one digit")
-	}
-	if !hasSpecial {
-		return errors.New("password must contain at least one special character")
-	}
-
-	return nil
-}

@@ -19,3 +19,12 @@ func BenchmarkValidateTransactionType(b *testing.B) {
 		v.ValidateTransactionType("deposit")
 	}
 }
+
+func BenchmarkValidatePassword(b *testing.B) {
+	v := New()
+	password := "Password123!"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		v.ValidatePassword(password)
+	}
+}

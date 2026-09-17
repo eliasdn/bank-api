@@ -35,3 +35,8 @@
 **Vulnerability:** Standard RFC 7519 JWT tokens containing string-formatted numeric subject claims (`"123"`) were stored as strings in Gin context, causing downstream handlers expecting `uint` user IDs to reject requests with `401 Unauthorized` or type assertion failures.
 **Learning:** Middleware storing untyped claims in request contexts must parse string representations of numeric IDs into typed primitives before handing off to downstream handlers that rely on strong typing.
 **Prevention:** In JWT authentication middleware, attempt `strconv.ParseUint` on string `sub` claims to set typed numeric values in context while retaining non-numeric strings for external identifiers.
+
+## 2026-09-17 - Information Leakage via API Response
+**Vulnerability:** The `Transfer` endpoint leaked the exact balance of the destination account in the API response `TransferResponse`. By making small transfers, any user could query the exact account balance of another user, resulting in a critical Information Leakage/Insecure Direct Object Reference (IDOR) vulnerability.
+**Learning:** Returning struct models directly or over-sharing data in Response DTOs can easily leak sensitive information across user boundaries in multi-tenant or multi-user applications.
+**Prevention:** Design Response DTOs carefully. When performing actions that affect resources owned by other users (like transfers), ensure the API response explicitly omits sensitive data about those third-party resources (such as `ToBalance`).

@@ -63,6 +63,5 @@ type WithdrawResponse struct {
 type TransferResponse struct {
 	Message       string  `json:"message"`
 	FromBalance   float64 `json:"from_balance"`
-	ToBalance     float64 `json:"to_balance"`
 	TransactionID uint    `json:"transaction_id"`
 }

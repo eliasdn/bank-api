@@ -103,6 +103,24 @@ func (suite *AccountsUnitTestSuite) TestCreateAccount_Success() {
 	assert.Equal(suite.T(), float64(0), account.Balance)
 }
 
+func (suite *AccountsUnitTestSuite) TestCreateAccount_InvalidType() {
+	accountJSON := `{"account_type":"invalid_type"}`
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/accounts", strings.NewReader(accountJSON))
+	req.Header.Set("Content-Type", "application/json")
+	req = suite.setUserID(req, 1)
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	var response struct {
+		Error string `json:"error"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(suite.T(), err)
+	assert.Contains(suite.T(), response.Error, "account type must be one of")
+}
+
 func (suite *AccountsUnitTestSuite) TestGetAccount_Success() {
 	// Create a test account
 	suite.db.Create(&models.Account{Model: gorm.Model{ID: 1}, UserID: 1, AccountNumber: "ACC004", AccountType: "checking", Balance: 1000})

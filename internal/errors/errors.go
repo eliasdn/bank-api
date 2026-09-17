@@ -42,7 +42,8 @@ func (e *Error) Response(c *gin.Context) gin.H {
 // Error implements the error interface
 func (e *Error) Error() string {
 	if e.Err != nil {
-		return fmt.Sprintf("%s: %v", e.Message, e.Err)
+		// Optimized to avoid fmt.Sprintf overhead by using native string concatenation
+		return e.Message + ": " + e.Err.Error()
 	}
 	return e.Message
 }

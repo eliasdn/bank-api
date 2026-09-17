@@ -199,6 +199,8 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		return
 	}
 
+	oldUser := user
+
 	var updateData struct {
 		FullName string `json:"fullName"`
 		Email    string `json:"email"`
@@ -239,6 +241,11 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	}
 	tx.Commit()
 
+	// Log audit event for user update
+	if err := h.AuditService.LogUserAction(c, userID, "update", &oldUser, &user); err != nil {
+		c.Error(err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User updated successfully",
 	})
@@ -251,9 +258,24 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.DB.Delete(&models.User{}, userID).Error; err != nil {
+	var user models.User
+	if err := h.DB.First(&user, userID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		}
+		return
+	}
+
+	if err := h.DB.Delete(&user, userID).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
 		return
+	}
+
+	// Log audit event for user deletion
+	if err := h.AuditService.LogUserAction(c, userID, "delete", &user, nil); err != nil {
+		c.Error(err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

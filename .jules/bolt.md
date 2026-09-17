@@ -72,3 +72,6 @@
 ## 2026-09-16 - Zero Allocation String Set Validation
 **Learning:** Initializing a local map `map[string]bool{...}` in a function to check a string against a fixed set of values is a performance anti-pattern in Go, as it forces heap allocation and population of the map on every function call.
 **Action:** Always use a `switch` statement for fixed set string validation. It compiles down to fast string comparisons with exactly zero allocations.
+## 2026-09-17 - [Eliminating reflection overhead in error formatting]
+**Learning:** For formatting strings that involve errors or simple concatenation in hot paths, using `fmt.Sprintf("%s: %v", ...)` introduces unnecessary runtime reflection overhead due to the `%v` verb and internal parsing.
+**Action:** Always prefer native string concatenation (e.g., `e.Message + ": " + e.Err.Error()`) over `fmt.Sprintf` for simple combinations of strings and errors to improve performance and reduce allocations.

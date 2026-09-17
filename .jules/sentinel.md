@@ -49,3 +49,8 @@
 **Vulnerability:** The `DeleteUser` handler previously soft-deleted the user record without cascading deletion to associated bank accounts or executing within a database transaction. This left orphaned bank accounts active in the database and failed to clear cached account counts.
 **Learning:** GORM soft deletes do not automatically cascade across relationships unless explicitly executed in a transaction or handled at the database constraint level.
 **Prevention:** When deleting primary user entities, always wrap deletion logic in a database transaction (`tx := db.Begin()`) that explicitly soft-deletes associated child resources (such as bank accounts) before deleting the parent user.
+
+## 2026-09-18 - Password Hash Exposure in JSON Serialization
+**Vulnerability:** The `User` struct's `PasswordHash` field lacked the `json:"-"` struct tag. When user objects were serialized to JSON (such as during audit logging of user registration, profile updates, and deletions), the bcrypt password hash was included in cleartext JSON in audit log entries.
+**Learning:** Default Go JSON struct field tags serialize all public fields. Omitting `json:"-"` on sensitive credential fields allows confidential credentials/hashes to leak into logs, responses, or external systems.
+**Prevention:** Always add `json:"-"` struct tags to sensitive credential and secret fields on data models to ensure they are excluded from automatic JSON serialization.

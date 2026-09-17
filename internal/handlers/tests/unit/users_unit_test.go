@@ -143,6 +143,20 @@ func (suite *UsersUnitTestSuite) TestUpdateUser_SuccessAndAuditLog() {
 	assert.Equal(suite.T(), "user", auditLog.Resource)
 }
 
+func (suite *UsersUnitTestSuite) TestUserJSON_ExcludesPasswordHash() {
+	user := &models.User{
+		Username:     "testuser",
+		Email:        "test@example.com",
+		PasswordHash: "$2a$10$SecretPasswordHashValueNotToExpose",
+		FullName:     "Test User",
+	}
+
+	data, err := json.Marshal(user)
+	assert.NoError(suite.T(), err)
+	assert.NotContains(suite.T(), string(data), "PasswordHash")
+	assert.NotContains(suite.T(), string(data), "SecretPasswordHashValueNotToExpose")
+}
+
 func (suite *UsersUnitTestSuite) TestDeleteUser_SuccessAndAuditLog() {
 	testUser := &models.User{
 		Model:    gorm.Model{ID: 1},

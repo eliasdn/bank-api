@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -59,8 +60,20 @@ func (rl *RequestLogger) LoggingMiddleware() gin.HandlerFunc {
 
 		// Get user ID if authenticated
 		var userID string
-		if val, exists := c.Get("user_id"); exists {
-			userID = val.(string)
+		if val, exists := c.Get("userID"); exists {
+			switch v := val.(type) {
+			case string:
+				userID = v
+			case uint:
+				userID = strconv.FormatUint(uint64(v), 10)
+			}
+		} else if val, exists := c.Get("user_id"); exists {
+			switch v := val.(type) {
+			case string:
+				userID = v
+			case uint:
+				userID = strconv.FormatUint(uint64(v), 10)
+			}
 		}
 
 		// Create log entry
@@ -108,7 +121,9 @@ func (rl *RequestLogger) RequestContext(c *gin.Context) context.Context {
 		ctx = context.WithValue(ctx, "request_id", requestID)
 	}
 
-	if userID, exists := c.Get("user_id"); exists {
+	if userID, exists := c.Get("userID"); exists {
+		ctx = context.WithValue(ctx, "user_id", userID)
+	} else if userID, exists := c.Get("user_id"); exists {
 		ctx = context.WithValue(ctx, "user_id", userID)
 	}
 
@@ -160,8 +175,20 @@ type AuditLog struct {
 // Log logs an audit event
 func (al *AuditLogger) Log(c *gin.Context, action, resource, resourceID, description string, metadata map[string]interface{}) {
 	var userID string
-	if val, exists := c.Get("user_id"); exists {
-		userID = val.(string)
+	if val, exists := c.Get("userID"); exists {
+		switch v := val.(type) {
+		case string:
+			userID = v
+		case uint:
+			userID = strconv.FormatUint(uint64(v), 10)
+		}
+	} else if val, exists := c.Get("user_id"); exists {
+		switch v := val.(type) {
+		case string:
+			userID = v
+		case uint:
+			userID = strconv.FormatUint(uint64(v), 10)
+		}
 	}
 
 	var requestID string

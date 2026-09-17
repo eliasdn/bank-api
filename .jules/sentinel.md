@@ -44,3 +44,8 @@
 **Vulnerability:** The `Transfer` endpoint leaked the exact balance of the destination account in the API response `TransferResponse`. By making small transfers, any user could query the exact account balance of another user, resulting in a critical Information Leakage/Insecure Direct Object Reference (IDOR) vulnerability.
 **Learning:** Returning struct models directly or over-sharing data in Response DTOs can easily leak sensitive information across user boundaries in multi-tenant or multi-user applications.
 **Prevention:** Design Response DTOs carefully. When performing actions that affect resources owned by other users (like transfers), ensure the API response explicitly omits sensitive data about those third-party resources (such as `ToBalance`).
+
+## 2026-09-17 - Orphaned active accounts on user profile deletion
+**Vulnerability:** The `DeleteUser` handler previously soft-deleted the user record without cascading deletion to associated bank accounts or executing within a database transaction. This left orphaned bank accounts active in the database and failed to clear cached account counts.
+**Learning:** GORM soft deletes do not automatically cascade across relationships unless explicitly executed in a transaction or handled at the database constraint level.
+**Prevention:** When deleting primary user entities, always wrap deletion logic in a database transaction (`tx := db.Begin()`) that explicitly soft-deletes associated child resources (such as bank accounts) before deleting the parent user.

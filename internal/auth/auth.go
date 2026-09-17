@@ -79,7 +79,11 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := h.DB.Where("username = ?", req.Username).First(&user).Error; err != nil {
+	err := h.DB.Where("username = ?", req.Username).First(&user).Error
+
+	if err != nil {
+		// Prevent timing attack by simulating password hash time
+		bcrypt.GenerateFromPassword([]byte(req.Password), h.Config.Security.BcryptCost)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}

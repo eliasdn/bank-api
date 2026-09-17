@@ -35,3 +35,7 @@
 **Vulnerability:** Standard RFC 7519 JWT tokens containing string-formatted numeric subject claims (`"123"`) were stored as strings in Gin context, causing downstream handlers expecting `uint` user IDs to reject requests with `401 Unauthorized` or type assertion failures.
 **Learning:** Middleware storing untyped claims in request contexts must parse string representations of numeric IDs into typed primitives before handing off to downstream handlers that rely on strong typing.
 **Prevention:** In JWT authentication middleware, attempt `strconv.ParseUint` on string `sub` claims to set typed numeric values in context while retaining non-numeric strings for external identifiers.
+## 2026-09-17 - Prevent username enumeration via timing attacks
+**Vulnerability:** The login endpoint exhibited a timing attack vulnerability. If a username was not found in the database, the server returned an error immediately, skipping the computationally expensive `bcrypt` password check. Attackers could measure response times to enumerate valid usernames.
+**Learning:** Returning early upon user lookup failure creates measurable timing differences that reveal whether an account exists, a classic username enumeration vector.
+**Prevention:** To prevent username enumeration via timing attacks during authentication, login handlers must simulate password hashing (e.g., using `bcrypt.GenerateFromPassword`) when a user is not found, ensuring response times remain constant regardless of username validity.

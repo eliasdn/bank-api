@@ -61,7 +61,12 @@ func (h *Handler) GetAccounts(c *gin.Context) {
 
 	// Get total count
 	var total int64
-	h.DB.Model(&models.Account{}).Where("user_id = ?", userID).Count(&total)
+	if val, ok := h.AccountCountCache.Load(userID); ok {
+		total = val.(int64)
+	} else {
+		h.DB.Model(&models.Account{}).Where("user_id = ?", userID).Count(&total)
+		h.AccountCountCache.Store(userID, total)
+	}
 
 	// Get paginated accounts
 	var accounts []models.Account
@@ -127,6 +132,9 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create account"})
 		return
 	}
+
+	// Invalidate account count cache
+	h.AccountCountCache.Delete(userID)
 
 	// Log audit event
 	if err := h.AuditService.LogAccountCreation(c, userID, &account); err != nil {

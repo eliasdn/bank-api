@@ -45,6 +45,11 @@ A secure, scalable, and production-ready banking API built with Go and Gin frame
 - `GET /health/detailed` - Detailed health status
 - `GET /metrics` - Prometheus metrics
 
+### Users
+- `GET /api/v1/users/me` - Get current user profile
+- `PUT /api/v1/users/me` - Update current user profile
+- `DELETE /api/v1/users/me` - Delete current user account
+
 ### Authentication
 - `POST /api/v1/auth/register` - User registration
 - `POST /api/v1/auth/login` - User login

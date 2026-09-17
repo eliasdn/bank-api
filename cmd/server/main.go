@@ -30,6 +30,9 @@ func main() {
 	// Create Gin router with middleware
 	router := gin.Default()
 
+	// Add security headers middleware
+	router.Use(middleware.SecurityHeadersMiddleware())
+
 	// Add rate limiting
 	rateLimiter := middleware.NewRateLimiter(cfg)
 	defer rateLimiter.StopCleanup()

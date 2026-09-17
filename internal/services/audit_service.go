@@ -85,21 +85,9 @@ func (s *AuditService) GetUserIDFromContext(c *gin.Context) (uint, bool) {
 	return 0, false
 }
 
-// GetIPAddress extracts IP address from request
+// GetIPAddress extracts IP address from request securely using Gin's ClientIP method,
+// which properly respects configured trusted proxies and prevents IP spoofing via headers.
 func (s *AuditService) GetIPAddress(c *gin.Context) string {
-	// Check for X-Forwarded-For header (for proxies)
-	xff := c.GetHeader("X-Forwarded-For")
-	if xff != "" {
-		return xff
-	}
-
-	// Check for X-Real-IP header
-	xri := c.GetHeader("X-Real-IP")
-	if xri != "" {
-		return xri
-	}
-
-	// Fallback to direct client IP
 	return c.ClientIP()
 }
 

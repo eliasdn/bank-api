@@ -132,6 +132,32 @@ func (suite *UsersIntegrationTestSuite) TestUpdateUser_Success() {
 	assert.Equal(suite.T(), "jane_updated@example.com", updatedUser.Email)
 }
 
+func (suite *UsersIntegrationTestSuite) TestUpdateUser_FullNameValidationFailure() {
+	user := &models.User{
+		Model:    gorm.Model{ID: 25},
+		Username: "validation_user",
+		FullName: "Valid Name",
+		Email:    "val@example.com",
+	}
+	suite.db.Create(user)
+
+	token := suite.generateToken(25)
+
+	body := map[string]string{
+		"fullName": "a", // Too short (min length is 2)
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/v1/users/me", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
 func (suite *UsersIntegrationTestSuite) TestDeleteUser_Success() {
 	user := &models.User{
 		Model:    gorm.Model{ID: 30},

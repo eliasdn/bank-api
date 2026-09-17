@@ -35,7 +35,7 @@ func (suite *UsersUnitTestSuite) SetupTest() {
 		panic("failed to connect database")
 	}
 	// Migrate the schema
-	suite.db.AutoMigrate(&models.User{}, &audit.AuditLog{})
+	suite.db.AutoMigrate(&models.User{}, &models.Account{}, &audit.AuditLog{})
 
 	// Create a handler with the real database
 	testConfig := config.LoadTestConfig()
@@ -152,6 +152,15 @@ func (suite *UsersUnitTestSuite) TestDeleteUser_SuccessAndAuditLog() {
 	}
 	suite.db.Create(testUser)
 
+	testAccount := &models.Account{
+		Model:         gorm.Model{ID: 100},
+		UserID:        1,
+		AccountNumber: "ACC999888",
+		AccountType:   "checking",
+		Balance:       500,
+	}
+	suite.db.Create(testAccount)
+
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/users/me", nil)
 	suite.router.ServeHTTP(w, req)
@@ -160,6 +169,10 @@ func (suite *UsersUnitTestSuite) TestDeleteUser_SuccessAndAuditLog() {
 
 	var deletedUser models.User
 	err := suite.db.First(&deletedUser, 1).Error
+	assert.ErrorIs(suite.T(), err, gorm.ErrRecordNotFound)
+
+	var deletedAccount models.Account
+	err = suite.db.First(&deletedAccount, 100).Error
 	assert.ErrorIs(suite.T(), err, gorm.ErrRecordNotFound)
 
 	var auditLog audit.AuditLog

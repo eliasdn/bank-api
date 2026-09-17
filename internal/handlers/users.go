@@ -268,10 +268,35 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.DB.Delete(&user, userID).Error; err != nil {
+	// Begin database transaction for atomic deletion
+	tx := h.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Soft-delete all bank accounts associated with the user to prevent orphaned accounts
+	if err := tx.Where("user_id = ?", userID).Delete(&models.Account{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user accounts"})
+		return
+	}
+
+	// Soft-delete the user
+	if err := tx.Delete(&user).Error; err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
 		return
 	}
+
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
+		return
+	}
+
+	// Invalidate account count cache
+	h.AccountCountCache.Delete(userID)
 
 	// Log audit event for user deletion
 	if err := h.AuditService.LogUserAction(c, userID, "delete", &user, nil); err != nil {

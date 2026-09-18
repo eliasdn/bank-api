@@ -69,3 +69,8 @@
 **Vulnerability:** Transaction amount validation allowed floating-point values with more than 2 decimal places (fractional cents like $0.001 or $10.0001). This created a vulnerability to sub-cent micro-transaction flooding, salami-slicing attacks, and floating-point precision degradation in balance calculations.
 **Learning:** Relational bounds checks (`gt=0`, `amount <= 1000000`) do not prevent sub-cent decimal values. In floating-point arithmetic, accumulating fractional cents can degrade balance precision and allow sub-cent manipulation.
 **Prevention:** Enforce maximum 2 decimal places in currency amount validation using `math.Abs(amount*100-math.Round(amount*100)) > 1e-6` before processing financial operations.
+
+## 2026-09-22 - CRLF and Null-Byte Injection in Transaction Descriptions
+**Vulnerability:** Transaction description validation previously checked length (`MaxDescriptionLength = 255`) but permitted null bytes (`\x00`), carriage returns (`\r`), and newlines (`\n`). This exposed application audit logs to CRLF log injection and SQLite parameter binding to potential null-byte truncation.
+**Learning:** Length checks alone do not prevent control character or null-byte injection vulnerabilities when text fields are persisted in database logs or written to structured application logs.
+**Prevention:** Reject null bytes (`\x00`), carriage returns (`\r`), and newlines (`\n`) during input validation for free-text parameters using byte loops prior to logging or storing them.

@@ -89,3 +89,10 @@
 **Optimization**: Replaced `strconv.Atoi` with a custom manual byte loop function `validation.ParseInt` for parsing string query parameters (e.g., page, limit) into integers.
 **Rationale**: `strconv.Atoi` overhead is unnecessary for parsing simple integer strings from query parameters, especially with fallback default values. A simple manual byte loop eliminates function overhead and provides faster parsing, avoiding reflection-like overhead for small positive integers.
 **Impact**: Reduced simple integer parsing time by ~20%.
+## 2024-05-24 - [Avoid Reflection in Handler Variables]
+**Learning:** Extracting variables from Gin's context via `c.Get("key")` followed by a type assertion `val.(uint)` uses reflection and requires heap allocation for the `interface{}` return value. Using `c.GetUint("key")` avoids this allocation overhead by directly returning the correct primitive type.
+**Action:** Use typed context getters like `c.GetUint` instead of the generic `c.Get` whenever possible to minimize allocations in hot paths.
+
+## 2024-05-24 - [Parse string IDs efficiently]
+**Learning:** Extracting string IDs from URL params and passing them to ORM queries or cache map keys relies on implicit parsing / reflection inside the ORM/Cache. Parsing them explicitly using an optimized manual byte loop (like `validation.ParseInt`) before passing to queries saves memory allocations and reduces lookup latency.
+**Action:** Parse `c.Param("id")` using `validation.ParseInt` immediately instead of relying on down-the-line string coercion.

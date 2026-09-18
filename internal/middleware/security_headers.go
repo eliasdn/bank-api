@@ -16,6 +16,7 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		c.Header("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
 		c.Header("X-Permitted-Cross-Domain-Policies", "none")
+		c.Header("X-DNS-Prefetch-Control", "off")
 		c.Next()
 	}
 }

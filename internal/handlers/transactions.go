@@ -236,13 +236,8 @@ func (h *Handler) Transfer(c *gin.Context) {
 	}
 
 	validator := validation.New()
-	if err := validator.ValidateAmount(transfer.Amount); err != nil {
+	if err := validator.ValidateTransfer(fromAccount.ID, transfer.ToAccountID, transfer.Amount, transfer.Description); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if fromAccount.ID == transfer.ToAccountID {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot transfer to the same account"})
 		return
 	}
 

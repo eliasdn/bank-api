@@ -231,6 +231,31 @@ func TestValidateTransactionType(t *testing.T) {
 	}
 }
 
+func TestValidateDescription(t *testing.T) {
+	v := New()
+
+	tests := []struct {
+		name        string
+		description string
+		wantErr     bool
+	}{
+		{"valid description", "Rent payment for March", false},
+		{"empty description", "", false},
+		{"too long description", strings.Repeat("a", 256), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := v.ValidateDescription(tt.description)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestValidateTransfer(t *testing.T) {
 	v := New()
 
@@ -239,16 +264,18 @@ func TestValidateTransfer(t *testing.T) {
 		fromAccountID uint
 		toAccountID   uint
 		amount        float64
+		description   string
 		wantErr       bool
 	}{
-		{"valid transfer", 1, 2, 100.0, false},
-		{"same account", 1, 1, 100.0, true},
-		{"invalid amount", 1, 2, -10.0, true},
+		{"valid transfer", 1, 2, 100.0, "Payment", false},
+		{"same account", 1, 1, 100.0, "Payment", true},
+		{"invalid amount", 1, 2, -10.0, "Payment", true},
+		{"description too long", 1, 2, 100.0, strings.Repeat("x", 256), true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := v.ValidateTransfer(tt.fromAccountID, tt.toAccountID, tt.amount)
+			err := v.ValidateTransfer(tt.fromAccountID, tt.toAccountID, tt.amount, tt.description)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

@@ -13,8 +13,9 @@ const (
 	MaxPasswordLength = 100
 	MinFullNameLength = 2
 	MaxFullNameLength = 100
-	MinEmailLength    = 5
-	MaxEmailLength    = 255
+	MinEmailLength       = 5
+	MaxEmailLength       = 255
+	MaxDescriptionLength = 255
 )
 
 // Validator provides validation methods
@@ -185,12 +186,23 @@ func (v *Validator) ValidateTransactionType(transactionType string) error {
 	}
 }
 
-// ValidateTransfer validates transfer details
-func (v *Validator) ValidateTransfer(fromAccountID, toAccountID uint, amount float64) error {
+// ValidateDescription validates transaction/transfer description length
+func (v *Validator) ValidateDescription(description string) error {
+	if len(description) > MaxDescriptionLength {
+		return errors.NewValidationError("description cannot exceed %d characters", MaxDescriptionLength)
+	}
+	return nil
+}
+
+// ValidateTransfer validates transfer details including description length
+func (v *Validator) ValidateTransfer(fromAccountID, toAccountID uint, amount float64, description string) error {
 	if fromAccountID == toAccountID {
 		return errors.NewValidationError("cannot transfer to the same account")
 	}
 	if err := v.ValidateAmount(amount); err != nil {
+		return err
+	}
+	if err := v.ValidateDescription(description); err != nil {
 		return err
 	}
 	return nil

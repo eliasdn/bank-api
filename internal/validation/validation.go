@@ -2,6 +2,7 @@ package validation
 
 import (
 	"bank-api/internal/errors"
+	"math"
 	"strings"
 )
 
@@ -167,6 +168,9 @@ func (v *Validator) ValidateAccountType(accountType string) error {
 
 // ValidateAmount validates transaction amount
 func (v *Validator) ValidateAmount(amount float64) error {
+	if math.IsNaN(amount) || math.IsInf(amount, 0) {
+		return errors.NewValidationError("amount must be a valid finite number")
+	}
 	if amount <= 0 {
 		return errors.NewValidationError("amount must be greater than zero")
 	}

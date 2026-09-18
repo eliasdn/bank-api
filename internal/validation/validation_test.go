@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"math"
 	"strings"
 	"testing"
 
@@ -190,6 +191,9 @@ func TestValidateAmount(t *testing.T) {
 		{"zero amount", 0, true},
 		{"negative amount", -10.0, true},
 		{"too large amount", 1000001.0, true},
+		{"NaN amount", math.NaN(), true},
+		{"positive infinity amount", math.Inf(1), true},
+		{"negative infinity amount", math.Inf(-1), true},
 	}
 
 	for _, tt := range tests {

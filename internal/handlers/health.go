@@ -94,14 +94,14 @@ func (h *HealthHandler) checkDatabase() HealthCheck {
 	if err != nil {
 		return HealthCheck{
 			Status:  "unhealthy",
-			Message: "Failed to get database connection: " + err.Error(),
+			Message: "Failed to get database connection",
 		}
 	}
 
 	if err := sqlDB.PingContext(ctx); err != nil {
 		return HealthCheck{
 			Status:  "unhealthy",
-			Message: "Database ping failed: " + err.Error(),
+			Message: "Database ping failed",
 		}
 	}
 
@@ -110,7 +110,7 @@ func (h *HealthHandler) checkDatabase() HealthCheck {
 	if err := h.db.WithContext(ctx).Raw("SELECT 1").Scan(&result).Error; err != nil {
 		return HealthCheck{
 			Status:  "unhealthy",
-			Message: "Database query failed: " + err.Error(),
+			Message: "Database query failed",
 		}
 	}
 

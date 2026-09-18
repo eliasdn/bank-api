@@ -372,8 +372,8 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 	}
 
 	// Parse pagination parameters
-	page := validation.ParsePaginationParam(c.DefaultQuery("page", "1"), 1)
-	limit := validation.ParsePaginationParam(c.DefaultQuery("limit", "20"), 20)
+	page := validation.ParseInt(c.Query("page"), 1)
+	limit := validation.ParseInt(c.Query("limit"), 20)
 	if page < 1 {
 		page = 1
 	}

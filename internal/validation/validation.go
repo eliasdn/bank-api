@@ -222,3 +222,43 @@ func (v *Validator) ValidatePagination(page, limit int) error {
 	}
 	return nil
 }
+
+// ParseInt is a highly optimized manual byte loop for parsing positive integers
+// from strings (e.g. query parameters). It avoids the reflection and function
+// call overhead of strconv.Atoi. If the string is empty or contains non-numeric
+// characters, or if it would cause an integer overflow, it returns the provided default value.
+func ParseInt(s string, def int) int {
+	if s == "" {
+		return def
+	}
+	res := 0
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c < '0' || c > '9' {
+			return def
+		}
+
+		// Prevent integer overflow. Assuming 64-bit architecture, max int is ~9e18
+		// For our use cases (pagination page/limit), checking length is sufficient and fast.
+		// If string has more than 18 characters, it might overflow or be too large for our needs.
+		if i > 18 {
+			return def
+		}
+
+		res = res*10 + int(c-'0')
+	}
+	// Check if all characters were '0'
+	if res == 0 {
+		allZeros := true
+		for i := 0; i < len(s); i++ {
+			if s[i] != '0' {
+				allZeros = false
+				break
+			}
+		}
+		if !allZeros {
+			return def
+		}
+	}
+	return res
+}

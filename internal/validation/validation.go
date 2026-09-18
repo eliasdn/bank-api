@@ -196,6 +196,22 @@ func (v *Validator) ValidateTransfer(fromAccountID, toAccountID uint, amount flo
 	return nil
 }
 
+// ParsePaginationParam parses string numbers for pagination without allocation/reflection, returns default on error/empty
+func ParsePaginationParam(s string, defaultValue int) int {
+	if s == "" {
+		return defaultValue
+	}
+	var n int
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c < '0' || c > '9' {
+			return defaultValue
+		}
+		n = n*10 + int(c-'0')
+	}
+	return n
+}
+
 // ValidatePagination validates pagination parameters
 func (v *Validator) ValidatePagination(page, limit int) error {
 	if page < 1 {

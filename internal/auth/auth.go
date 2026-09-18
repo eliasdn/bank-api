@@ -95,9 +95,11 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	}
 
 	// Generate JWT token
+	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": user.ID,
-		"exp": time.Now().Add(h.Config.JWT.Expiration).Unix(),
+		"iat": now.Unix(),
+		"exp": now.Add(h.Config.JWT.Expiration).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(h.Config.JWT.Secret))

@@ -14,8 +14,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -45,6 +47,7 @@ func (suite *UsersUnitTestSuite) SetupTest() {
 	// Register test routes without auth middleware
 	suite.router.GET("/users/:id", suite.handler.GetUser)
 	suite.router.POST("/register", suite.handler.RegisterUser)
+	suite.router.POST("/login", suite.handler.LoginUser)
 
 	// Auth mock route group for user update and delete testing
 	authed := suite.router.Group("/users/me")
@@ -155,6 +158,52 @@ func (suite *UsersUnitTestSuite) TestUserJSON_ExcludesPasswordHash() {
 	assert.NoError(suite.T(), err)
 	assert.NotContains(suite.T(), string(data), "PasswordHash")
 	assert.NotContains(suite.T(), string(data), "SecretPasswordHashValueNotToExpose")
+}
+
+func (suite *UsersUnitTestSuite) TestLoginUser_ContainsIssuedAtClaim() {
+	password := "Password123!"
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 4)
+	testUser := &models.User{
+		Model:        gorm.Model{ID: 10},
+		Username:     "jwtuser",
+		Email:        "jwt@example.com",
+		PasswordHash: string(hashedPassword),
+		FullName:     "JWT User",
+	}
+	suite.db.Create(testUser)
+
+	loginReq := map[string]string{
+		"username": "jwtuser",
+		"password": password,
+	}
+	body, _ := json.Marshal(loginReq)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	var res map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &res)
+	assert.NoError(suite.T(), err)
+
+	tokenString, ok := res["token"].(string)
+	assert.True(suite.T(), ok)
+
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		return []byte(config.LoadTestConfig().JWT.Secret), nil
+	})
+	assert.NoError(suite.T(), err)
+	assert.True(suite.T(), token.Valid)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	assert.True(suite.T(), ok)
+
+	iat, exists := claims["iat"]
+	assert.True(suite.T(), exists)
+	assert.NotNil(suite.T(), iat)
 }
 
 func (suite *UsersUnitTestSuite) TestDeleteUser_SuccessAndAuditLog() {

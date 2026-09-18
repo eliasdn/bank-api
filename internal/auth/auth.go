@@ -25,8 +25,8 @@ type RegisterRequest struct {
 }
 
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Username string `json:"username" binding:"required,max=50"`
+	Password string `json:"password" binding:"required,max=100"`
 }
 
 func (h *Handler) RegisterUser(c *gin.Context) {

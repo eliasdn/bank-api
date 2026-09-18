@@ -244,6 +244,36 @@ func (suite *UsersUnitTestSuite) TestDeleteUser_SuccessAndAuditLog() {
 	assert.Equal(suite.T(), "user", auditLog.Resource)
 }
 
+func (suite *UsersUnitTestSuite) TestLoginUser_OversizedInputRejected() {
+	// Test login with username exceeding 50 characters
+	longUsernameReq := map[string]string{
+		"username": string(bytes.Repeat([]byte("a"), 51)),
+		"password": "Password123!",
+	}
+	body, _ := json.Marshal(longUsernameReq)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	// Test login with password exceeding 100 characters
+	longPasswordReq := map[string]string{
+		"username": "validuser",
+		"password": string(bytes.Repeat([]byte("p"), 101)),
+	}
+	body, _ = json.Marshal(longPasswordReq)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/login", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
 func TestUsersUnitSuite(t *testing.T) {
 	suite.Run(t, new(UsersUnitTestSuite))
 }

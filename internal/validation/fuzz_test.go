@@ -14,6 +14,8 @@ func FuzzValidateUsername(f *testing.F) {
 		"super_long_username_that_exceeds_fifty_characters_limit_by_far",
 		"abc", strings.Repeat("u", 50), strings.Repeat("u", 51),
 		"user@name", "user name", "user#123", "こんにちは",
+		"user\x00name", "user\r\n", "12345", "---", "___",
+		"user.name", "user+1", "USER_NAME_123", "a_b-c",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -21,27 +23,76 @@ func FuzzValidateUsername(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, username string) {
 		err := v.ValidateUsername(username)
-		if err == nil {
-			if len(username) < MinUsernameLength || len(username) > MaxUsernameLength {
-				t.Errorf("ValidateUsername allowed invalid length %d for %q", len(username), username)
-			}
+		isValid := len(username) >= MinUsernameLength && len(username) <= MaxUsernameLength
+		if isValid {
 			for i := 0; i < len(username); i++ {
 				c := username[i]
 				if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-') {
-					t.Errorf("ValidateUsername allowed invalid character %q in %q", c, username)
+					isValid = false
+					break
 				}
 			}
 		}
+		if (err == nil) != isValid {
+			t.Errorf("ValidateUsername mismatch for %q: got err=%v, expected valid=%v", username, err, isValid)
+		}
 	})
+}
+
+func expectedValidEmail(email string) bool {
+	email = strings.TrimSpace(strings.ToLower(email))
+	if len(email) < MinEmailLength || len(email) > MaxEmailLength {
+		return false
+	}
+
+	atIndex := strings.IndexByte(email, '@')
+	if atIndex <= 0 || atIndex == len(email)-1 {
+		return false
+	}
+
+	for i := 0; i < atIndex; i++ {
+		c := email[i]
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '%' || c == '+' || c == '-') {
+			return false
+		}
+	}
+
+	dotIndex := -1
+	for i := atIndex + 1; i < len(email); i++ {
+		c := email[i]
+		if c == '.' {
+			dotIndex = i
+		} else if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-') {
+			return false
+		}
+	}
+
+	if dotIndex == -1 || dotIndex == atIndex+1 {
+		return false
+	}
+
+	if len(email)-dotIndex-1 < 2 {
+		return false
+	}
+	for i := dotIndex + 1; i < len(email); i++ {
+		c := email[i]
+		if !((c >= 'a' && c <= 'z')) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func FuzzValidateEmail(f *testing.F) {
 	v := New()
 	seeds := []string{
-		"user@example.com", "test.user+tag@domain.co.uk", "invalid", "a@b.c", "",
-		"@domain.com", "user@", "a@b.co", "  user@example.com  ",
+		"user@example.com", "test.user+tag@domain.co.uk", "invalid", "a@b.co", "",
+		"@domain.com", "user@", "a@b.c", "  user@example.com  ",
 		"user@domain..com", "user@domain.c", strings.Repeat("a", 245) + "@example.com",
-		strings.Repeat("a", 250) + "@example.com",
+		strings.Repeat("a", 250) + "@example.com", "user name@example.com",
+		"user@domain.123", "user@domain.org", "TEST%USER+123@sub.domain.com",
+		"user\x00@example.com", "user@ex\r\nample.com",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -49,16 +100,32 @@ func FuzzValidateEmail(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, email string) {
 		err := v.ValidateEmail(email)
-		if err == nil {
-			trimmed := strings.TrimSpace(strings.ToLower(email))
-			if len(trimmed) < MinEmailLength || len(trimmed) > MaxEmailLength {
-				t.Errorf("ValidateEmail allowed invalid length %d for %q", len(trimmed), email)
-			}
-			if !strings.Contains(trimmed, "@") || !strings.Contains(trimmed, ".") {
-				t.Errorf("ValidateEmail allowed email without @ or .: %q", email)
-			}
+		expected := expectedValidEmail(email)
+		if (err == nil) != expected {
+			t.Errorf("ValidateEmail mismatch for %q: got err=%v, expected valid=%v", email, err, expected)
 		}
 	})
+}
+
+func expectedValidPassword(password string) bool {
+	if len(password) < MinPasswordLength || len(password) > MaxPasswordLength {
+		return false
+	}
+	var hasUpper, hasLower, hasNumber, hasSpecial bool
+	for i := 0; i < len(password); i++ {
+		c := password[i]
+		switch {
+		case c >= 'A' && c <= 'Z':
+			hasUpper = true
+		case c >= 'a' && c <= 'z':
+			hasLower = true
+		case c >= '0' && c <= '9':
+			hasNumber = true
+		case strings.IndexByte(`!@#$%^&*(),.?":{}|<>`, c) >= 0:
+			hasSpecial = true
+		}
+	}
+	return hasUpper && hasLower && hasNumber && hasSpecial
 }
 
 func FuzzValidatePassword(f *testing.F) {
@@ -66,7 +133,8 @@ func FuzzValidatePassword(f *testing.F) {
 	seeds := []string{
 		"Password123!", "short", "lowercase123!", "UPPERCASE123!", "NoNumber!", "NoSpecial123", "",
 		"P1!aaaaa", strings.Repeat("A1!a", 25), strings.Repeat("A1!a", 26),
-		"Password123\x00!", "Password 123!", "🔑Password123!",
+		"Password123\x00!", "Password 123!", "🔑Password123!", "Pass#123",
+		"A1!aA1!a", "Abcdefg123$", "VeryLongPasswordWithSpecialChars!99",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -74,29 +142,18 @@ func FuzzValidatePassword(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, password string) {
 		err := v.ValidatePassword(password)
-		if err == nil {
-			if len(password) < MinPasswordLength || len(password) > MaxPasswordLength {
-				t.Errorf("ValidatePassword allowed invalid length %d for %q", len(password), password)
-			}
-			var hasUpper, hasLower, hasNumber, hasSpecial bool
-			for i := 0; i < len(password); i++ {
-				c := password[i]
-				switch {
-				case c >= 'A' && c <= 'Z':
-					hasUpper = true
-				case c >= 'a' && c <= 'z':
-					hasLower = true
-				case c >= '0' && c <= '9':
-					hasNumber = true
-				case strings.IndexByte(`!@#$%^&*(),.?":{}|<>`, c) >= 0:
-					hasSpecial = true
-				}
-			}
-			if !hasUpper || !hasLower || !hasNumber || !hasSpecial {
-				t.Errorf("ValidatePassword allowed password missing required character categories: %q", password)
-			}
+		expected := expectedValidPassword(password)
+		if (err == nil) != expected {
+			t.Errorf("ValidatePassword mismatch for %q: got err=%v, expected valid=%v", password, err, expected)
 		}
 	})
+}
+
+func expectedValidFullName(fullName string) bool {
+	if len(fullName) < MinFullNameLength || len(fullName) > MaxFullNameLength {
+		return false
+	}
+	return strings.TrimSpace(fullName) != ""
 }
 
 func FuzzValidateFullName(f *testing.F) {
@@ -104,7 +161,8 @@ func FuzzValidateFullName(f *testing.F) {
 	seeds := []string{
 		"John Doe", "A", "", "   ", "Jane Mary Smith-Doe", "\t\n",
 		"Jo", strings.Repeat("a", 100), strings.Repeat("a", 101),
-		"John\x00Doe", "John 123", "Jean-Luc Pic'ard",
+		"John\x00Doe", "John 123", "Jean-Luc Pic'ard", "   John   ",
+		"  A  ", "  AB  ", "Dr. Martin Luther King, Jr.",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -112,13 +170,9 @@ func FuzzValidateFullName(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, fullName string) {
 		err := v.ValidateFullName(fullName)
-		if err == nil {
-			if len(fullName) < MinFullNameLength || len(fullName) > MaxFullNameLength {
-				t.Errorf("ValidateFullName allowed invalid length %d for %q", len(fullName), fullName)
-			}
-			if strings.TrimSpace(fullName) == "" {
-				t.Errorf("ValidateFullName allowed whitespace-only full name %q", fullName)
-			}
+		expected := expectedValidFullName(fullName)
+		if (err == nil) != expected {
+			t.Errorf("ValidateFullName mismatch for %q: got err=%v, expected valid=%v", fullName, err, expected)
 		}
 	})
 }
@@ -138,6 +192,9 @@ func FuzzValidateUserRegistration(f *testing.F) {
 		{"john_doe", "invalid-email", "Password123!", "John Doe"},
 		{"john_doe", "john@example.com", "short", "John Doe"},
 		{"john_doe", "john@example.com", "Password123!", "J"},
+		{"valid_user", "valid@domain.org", "ValidPass123#", "Jane Doe"},
+		{"bad-user!", "john@example.com", "Password123!", "John Doe"},
+		{"john_doe", "john@example.com", "Password123!", "   "},
 	}
 	for _, s := range seeds {
 		f.Add(s.username, s.email, s.password, s.fullName)
@@ -160,7 +217,10 @@ func FuzzValidateUserRegistration(f *testing.F) {
 
 func FuzzValidateAccountType(f *testing.F) {
 	v := New()
-	seeds := []string{"checking", "savings", "credit", "investment", "", "CHECKING", "checking ", " checking"}
+	seeds := []string{
+		"checking", "savings", "credit", "investment", "", "CHECKING", "checking ", " checking",
+		"Checking", "Savings", "Credit", "other", "123", "credit\x00",
+	}
 	for _, seed := range seeds {
 		f.Add(seed)
 	}
@@ -174,12 +234,26 @@ func FuzzValidateAccountType(f *testing.F) {
 	})
 }
 
+func expectedValidAmount(amount float64) bool {
+	if math.IsNaN(amount) || math.IsInf(amount, 0) {
+		return false
+	}
+	if amount <= 0 || amount > 1000000 {
+		return false
+	}
+	if math.Abs(amount*100-math.Round(amount*100)) > 1e-6 {
+		return false
+	}
+	return true
+}
+
 func FuzzValidateAmount(f *testing.F) {
 	v := New()
 	seeds := []float64{
 		100.0, 10.55, 0.0, -10.0, 1000001.0, 0.001, 10.005,
 		math.NaN(), math.Inf(1), math.Inf(-1),
 		1000000.0, 0.01, -0.0, math.MaxFloat64, math.SmallestNonzeroFloat64,
+		999999.99, 0.0001, 123.456, 1.0000001, -100.50,
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -187,23 +261,19 @@ func FuzzValidateAmount(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, amount float64) {
 		err := v.ValidateAmount(amount)
-		if err == nil {
-			if math.IsNaN(amount) || math.IsInf(amount, 0) {
-				t.Errorf("ValidateAmount allowed non-finite float %v", amount)
-			}
-			if amount <= 0 || amount > 1000000 {
-				t.Errorf("ValidateAmount allowed out of range amount %v", amount)
-			}
-			if math.Abs(amount*100-math.Round(amount*100)) > 1e-6 {
-				t.Errorf("ValidateAmount allowed sub-cent precision amount %v", amount)
-			}
+		expected := expectedValidAmount(amount)
+		if (err == nil) != expected {
+			t.Errorf("ValidateAmount mismatch for %v: got err=%v, expected valid=%v", amount, err, expected)
 		}
 	})
 }
 
 func FuzzValidateTransactionType(f *testing.F) {
 	v := New()
-	seeds := []string{"deposit", "withdrawal", "transfer", "invalid", "", "DEPOSIT", "deposit ", "withdrawal "}
+	seeds := []string{
+		"deposit", "withdrawal", "transfer", "invalid", "", "DEPOSIT", "deposit ", "withdrawal ",
+		"Deposit", "Withdrawal", "Transfer", "payment", "refund", "deposit\x00",
+	}
 	for _, seed := range seeds {
 		f.Add(seed)
 	}
@@ -217,12 +287,27 @@ func FuzzValidateTransactionType(f *testing.F) {
 	})
 }
 
+func expectedValidDescription(description string) bool {
+	if len(description) > MaxDescriptionLength {
+		return false
+	}
+	for i := 0; i < len(description); i++ {
+		c := description[i]
+		if c == 0 || c == '\r' || c == '\n' {
+			return false
+		}
+	}
+	return true
+}
+
 func FuzzValidateDescription(f *testing.F) {
 	v := New()
 	seeds := []string{
 		"Payment for rent", "Line 1\nLine 2", "Null\x00Byte", "",
 		"Very long description that might exceed limit",
 		strings.Repeat("d", 255), strings.Repeat("d", 256), "Line 1\rLine 2",
+		"Normal payment", "Payment\r", "Payment\n", "\x00",
+		strings.Repeat("a", 254), "Emoji 💰 test",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -230,13 +315,9 @@ func FuzzValidateDescription(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, description string) {
 		err := v.ValidateDescription(description)
-		if err == nil {
-			if len(description) > MaxDescriptionLength {
-				t.Errorf("ValidateDescription allowed description length %d > %d", len(description), MaxDescriptionLength)
-			}
-			if strings.ContainsAny(description, "\x00\r\n") {
-				t.Errorf("ValidateDescription allowed illegal control character in %q", description)
-			}
+		expected := expectedValidDescription(description)
+		if (err == nil) != expected {
+			t.Errorf("ValidateDescription mismatch for %q: got err=%v, expected valid=%v", description, err, expected)
 		}
 	})
 }
@@ -256,6 +337,10 @@ func FuzzValidateTransfer(f *testing.F) {
 		{0, 0, 0.0, ""},
 		{1, 2, 0.001, "Subcent"},
 		{1, 2, 100.0, strings.Repeat("x", 256)},
+		{10, 20, 500.25, "Valid transfer"},
+		{5, 5, 50.0, "Self transfer"},
+		{1, 2, 1000000.0, "Max transfer"},
+		{1, 2, 1000000.01, "Exceed max transfer"},
 	}
 	for _, s := range seeds {
 		f.Add(s.fromID, s.toID, s.amount, s.description)
@@ -287,6 +372,10 @@ func FuzzParsePaginationParam(f *testing.F) {
 		{"0007", 7},
 		{"9999999999999999999", 10},
 		{"123a", 10},
+		{"000", 0},
+		{"123456789012345678", 1},
+		{"-123", 10},
+		{" 10 ", 10},
 	}
 	for _, s := range seeds {
 		f.Add(s.s, s.def)
@@ -335,6 +424,9 @@ func FuzzValidatePagination(f *testing.F) {
 		{1, 1},
 		{100, 100},
 		{2, 50},
+		{1000, 50},
+		{-100, 10},
+		{1, -10},
 	}
 	for _, s := range seeds {
 		f.Add(s.page, s.limit)
@@ -366,6 +458,10 @@ func FuzzParseInt(f *testing.F) {
 		{"00", 0},
 		{"123456789012345678", 0},
 		{"1234567890123456789", 0},
+		{" 123", 5},
+		{"123 ", 5},
+		{"-0", 0},
+		{"000000000000000000", 0},
 	}
 	for _, s := range seeds {
 		f.Add(s.s, s.def)

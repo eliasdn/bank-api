@@ -117,28 +117,44 @@ func TestRateLimiter(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
-	t.Run("Rate limit status endpoint", func(t *testing.T) {
-		rl := NewRateLimiter(&config.AppConfig{})
+	t.Run("Rate limit status endpoint protection", func(t *testing.T) {
+		cfg := &config.AppConfig{}
+		cfg.JWT.Secret = "test-secret"
+		rl := NewRateLimiter(cfg)
 		defer rl.StopCleanup()
 
+		authMiddleware := NewAuthMiddleware(cfg)
+
 		router := gin.New()
-		router.Use(func(c *gin.Context) {
-			c.Set("userID", uint(123))
-			c.Next()
-		})
-		router.GET("/status", func(c *gin.Context) {
+		router.GET("/api/v1/rate-limit-status", authMiddleware.Authenticate(), func(c *gin.Context) {
 			status := rl.GetRateLimitStatus(c)
 			c.JSON(http.StatusOK, status)
 		})
 
-		req := httptest.NewRequest(http.MethodGet, "/status", nil)
-		req.RemoteAddr = "192.168.1.1:12345"
+		// 1. Unauthenticated request without token should fail with 401
+		unauthReq := httptest.NewRequest(http.MethodGet, "/api/v1/rate-limit-status", nil)
+		unauthReq.RemoteAddr = "192.168.1.1:12345"
+		w1 := httptest.NewRecorder()
+		router.ServeHTTP(w1, unauthReq)
+		assert.Equal(t, http.StatusUnauthorized, w1.Code)
 
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
+		// 2. Authenticated request with simulated auth context should succeed
+		routerAuth := gin.New()
+		routerAuth.GET("/api/v1/rate-limit-status", func(c *gin.Context) {
+			c.Set("userID", uint(123))
+			c.Next()
+		}, func(c *gin.Context) {
+			status := rl.GetRateLimitStatus(c)
+			c.JSON(http.StatusOK, status)
+		})
 
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.True(t, w.Body.Len() > 0)
+		authReq := httptest.NewRequest(http.MethodGet, "/api/v1/rate-limit-status", nil)
+		authReq.RemoteAddr = "192.168.1.1:12345"
+		w2 := httptest.NewRecorder()
+		routerAuth.ServeHTTP(w2, authReq)
+
+		assert.Equal(t, http.StatusOK, w2.Code)
+		assert.True(t, w2.Body.Len() > 0)
 	})
 }
 

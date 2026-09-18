@@ -57,12 +57,6 @@ func main() {
 	// Expose metrics endpoint
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// Rate limit status endpoint
-	router.GET("/api/v1/rate-limit-status", func(c *gin.Context) {
-		status := rateLimiter.GetRateLimitStatus(c)
-		c.JSON(http.StatusOK, status)
-	})
-
 	// Health check endpoints
 	healthHandler := handlers.NewHealthHandler(dbInstance.DB)
 	router.GET("/health", healthHandler.HealthCheck)
@@ -85,6 +79,12 @@ func main() {
 			auth.POST("/register", h.RegisterUser)
 			auth.POST("/login", h.LoginUser)
 		}
+
+		// Rate limit status endpoint (protected)
+		api.GET("/rate-limit-status", authMiddleware.Authenticate(), func(c *gin.Context) {
+			status := rateLimiter.GetRateLimitStatus(c)
+			c.JSON(http.StatusOK, status)
+		})
 
 		// User routes (protected)
 		users := api.Group("/users")

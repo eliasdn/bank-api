@@ -146,6 +146,47 @@ func (suite *UsersUnitTestSuite) TestUpdateUser_SuccessAndAuditLog() {
 	assert.Equal(suite.T(), "user", auditLog.Resource)
 }
 
+func (suite *UsersUnitTestSuite) TestUpdateUser_EmptyPayloadRejected() {
+	testUser := &models.User{
+		Model:    gorm.Model{ID: 1},
+		Username: "testuser",
+		FullName: "Old Name",
+		Email:    "old@example.com",
+	}
+	suite.db.Create(testUser)
+
+	body, _ := json.Marshal(map[string]string{})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/users/me", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
+func (suite *UsersUnitTestSuite) TestUpdateUser_EmptyFieldsRejected() {
+	testUser := &models.User{
+		Model:    gorm.Model{ID: 1},
+		Username: "testuser",
+		FullName: "Old Name",
+		Email:    "old@example.com",
+	}
+	suite.db.Create(testUser)
+
+	updateReq := map[string]string{
+		"fullName": "",
+	}
+	body, _ := json.Marshal(updateReq)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/users/me", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
 func (suite *UsersUnitTestSuite) TestUserJSON_ExcludesPasswordHash() {
 	user := &models.User{
 		Username:     "testuser",

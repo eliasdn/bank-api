@@ -204,8 +204,8 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	oldUser := user
 
 	var updateData struct {
-		FullName string `json:"fullName"`
-		Email    string `json:"email"`
+		FullName *string `json:"fullName" binding:"omitempty,min=2,max=100"`
+		Email    *string `json:"email" binding:"omitempty,email,max=100"`
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -213,35 +213,48 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		return
 	}
 
+	if updateData.FullName == nil && updateData.Email == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "at least one field must be provided"})
+		return
+	}
+
 	validator := validation.New()
-	if updateData.FullName != "" {
-		if err := validator.ValidateFullName(updateData.FullName); err != nil {
+	if updateData.FullName != nil {
+		if err := validator.ValidateFullName(*updateData.FullName); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		user.FullName = updateData.FullName
+		user.FullName = *updateData.FullName
 	}
-	if updateData.Email != "" {
-		if err := validator.ValidateEmail(updateData.Email); err != nil {
+	if updateData.Email != nil {
+		if err := validator.ValidateEmail(*updateData.Email); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email format"})
 			return
 		}
 
 		var existingUser models.User
-		if err := h.DB.Where("email = ? AND id != ?", updateData.Email, userID).First(&existingUser).Error; err == nil {
+		if err := h.DB.Where("email = ? AND id != ?", *updateData.Email, userID).First(&existingUser).Error; err == nil {
 			c.JSON(http.StatusConflict, gin.H{"error": "email already in use"})
 			return
 		}
-		user.Email = updateData.Email
+		user.Email = *updateData.Email
 	}
 
 	tx := h.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 	if err := tx.Save(&user).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
 		return
 	}
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+		return
+	}
 
 	// Log audit event for user update
 	if err := h.AuditService.LogUserAction(c, userID, "update", &oldUser, &user); err != nil {

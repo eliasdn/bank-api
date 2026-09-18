@@ -59,3 +59,8 @@
 **Vulnerability:** `ValidateAmount` checked `amount <= 0` and `amount > 1000000` but omitted non-finite floating-point checks. In IEEE 754 arithmetic (and Go float comparisons), comparisons against `math.NaN()` always evaluate to false, allowing `NaN` values to bypass range validation checks.
 **Learning:** Standard comparison operators (`<=`, `>`) do not catch `NaN` values because all floating-point comparisons with `NaN` evaluate to `false`.
 **Prevention:** Explicitly validate numeric inputs with `math.IsNaN(val)` and `math.IsInf(val, 0)` prior to relational range comparisons in critical financial or numeric validation paths.
+
+## 2026-09-20 - Validation Bypass via Empty String in Struct JSON Deserialization
+**Vulnerability:** Updating user profile allowed empty string (`""`) payloads for fields like `fullName` and `email` to bypass custom validation functions because non-pointer struct fields evaluate `""` as zero-value / unsupplied, while empty JSON payloads (`{}`) executed redundant DB write transactions and audit logging.
+**Learning:** In Go Gin handlers, binding optional JSON fields to value types (like `string`) makes it impossible to distinguish between an omitted field and an explicitly passed empty string (`""`).
+**Prevention:** Use pointer struct fields (`*string`) combined with Gin struct tags (`binding:"omitempty,min=2,max=100"`) and explicit checks (`FullName == nil && Email == nil`) to enforce presence and length constraints on partial updates.

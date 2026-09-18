@@ -177,6 +177,10 @@ func (v *Validator) ValidateAmount(amount float64) error {
 	if amount > 1000000 { // $1M limit
 		return errors.NewValidationError("amount exceeds maximum allowed limit")
 	}
+	// Ensure amount has at most 2 decimal places (cents) to prevent sub-cent/salami-slicing attacks
+	if math.Abs(amount*100-math.Round(amount*100)) > 1e-6 {
+		return errors.NewValidationError("amount cannot have more than 2 decimal places")
+	}
 	return nil
 }
 

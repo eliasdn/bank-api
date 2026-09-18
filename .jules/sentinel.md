@@ -64,3 +64,8 @@
 **Vulnerability:** Updating user profile allowed empty string (`""`) payloads for fields like `fullName` and `email` to bypass custom validation functions because non-pointer struct fields evaluate `""` as zero-value / unsupplied, while empty JSON payloads (`{}`) executed redundant DB write transactions and audit logging.
 **Learning:** In Go Gin handlers, binding optional JSON fields to value types (like `string`) makes it impossible to distinguish between an omitted field and an explicitly passed empty string (`""`).
 **Prevention:** Use pointer struct fields (`*string`) combined with Gin struct tags (`binding:"omitempty,min=2,max=100"`) and explicit checks (`FullName == nil && Email == nil`) to enforce presence and length constraints on partial updates.
+
+## 2026-09-21 - Sub-Cent Precision Validation in Financial Transactions
+**Vulnerability:** Transaction amount validation allowed floating-point values with more than 2 decimal places (fractional cents like $0.001 or $10.0001). This created a vulnerability to sub-cent micro-transaction flooding, salami-slicing attacks, and floating-point precision degradation in balance calculations.
+**Learning:** Relational bounds checks (`gt=0`, `amount <= 1000000`) do not prevent sub-cent decimal values. In floating-point arithmetic, accumulating fractional cents can degrade balance precision and allow sub-cent manipulation.
+**Prevention:** Enforce maximum 2 decimal places in currency amount validation using `math.Abs(amount*100-math.Round(amount*100)) > 1e-6` before processing financial operations.

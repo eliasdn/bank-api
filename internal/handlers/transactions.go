@@ -30,9 +30,7 @@ func (h *Handler) Deposit(c *gin.Context) {
 		return
 	}
 
-	var deposit struct {
-		Amount float64 `json:"amount" binding:"required,gt=0"`
-	}
+	var deposit dto.DepositRequest
 	if err := c.ShouldBindJSON(&deposit); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid deposit amount"})
 		return
@@ -122,9 +120,7 @@ func (h *Handler) Withdraw(c *gin.Context) {
 		return
 	}
 
-	var withdrawal struct {
-		Amount float64 `json:"amount" binding:"required,gt=0"`
-	}
+	var withdrawal dto.WithdrawRequest
 	if err := c.ShouldBindJSON(&withdrawal); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid withdrawal amount"})
 		return
@@ -225,11 +221,7 @@ func (h *Handler) Transfer(c *gin.Context) {
 		return
 	}
 
-	var transfer struct {
-		ToAccountID uint    `json:"to_account_id" binding:"required"`
-		Amount      float64 `json:"amount" binding:"required,gt=0"`
-		Description string  `json:"description"`
-	}
+	var transfer dto.TransferRequest
 	if err := c.ShouldBindJSON(&transfer); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid transfer request"})
 		return

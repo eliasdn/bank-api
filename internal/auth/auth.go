@@ -4,6 +4,7 @@ import (
 	"bank-api/internal/config"
 	"bank-api/internal/db"
 	"bank-api/internal/models"
+	"bank-api/internal/validation"
 	"net/http"
 	"time"
 
@@ -32,6 +33,13 @@ type LoginRequest struct {
 func (h *Handler) RegisterUser(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate registration input
+	validator := validation.New()
+	if err := validator.ValidateUserRegistration(req.Username, req.Email, req.Password, req.FullName); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

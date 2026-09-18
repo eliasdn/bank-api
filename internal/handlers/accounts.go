@@ -36,13 +36,8 @@ type CreateAccountRequest struct {
 }
 
 func (h *Handler) GetAccounts(c *gin.Context) {
-	userIDVal, ok := c.Get("userID")
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-	userID, ok := userIDVal.(uint)
-	if !ok {
+	userID := c.GetUint("userID")
+	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
@@ -98,13 +93,8 @@ func (h *Handler) GetAccounts(c *gin.Context) {
 }
 
 func (h *Handler) CreateAccount(c *gin.Context) {
-	userIDVal, ok := c.Get("userID")
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-	userID, ok := userIDVal.(uint)
-	if !ok {
+	userID := c.GetUint("userID")
+	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
@@ -151,18 +141,19 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 }
 
 func (h *Handler) GetAccount(c *gin.Context) {
-	userIDVal, ok := c.Get("userID")
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-	userID, ok := userIDVal.(uint)
-	if !ok {
+	userID := c.GetUint("userID")
+	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	accountID := c.Param("id")
+	accountIDStr := c.Param("id")
+	accountID := validation.ParseInt(accountIDStr, 0)
+	if accountID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		return
+	}
+
 	var account models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", accountID, userID).First(&account).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {

@@ -12,10 +12,12 @@ func FuzzValidateUsername(f *testing.F) {
 	seeds := []string{
 		"john_doe", "admin123", "a", "", "user-name",
 		"super_long_username_that_exceeds_fifty_characters_limit_by_far",
-		"abc", strings.Repeat("u", 50), strings.Repeat("u", 51),
-		"user@name", "user name", "user#123", "こんにちは",
-		"user\x00name", "user\r\n", "12345", "---", "___",
-		"user.name", "user+1", "USER_NAME_123", "a_b-c",
+		"abc", strings.Repeat("u", 50), strings.Repeat("u", 51), strings.Repeat("u", 49),
+		"user@name", "user name", "user#123", "こんにちは", "user_name_12345",
+		"user\x00name", "user\r\n", "12345", "---", "___", "ab", "abcde",
+		"user.name", "user+1", "USER_NAME_123", "a_b-c", "   user   ",
+		"user_name!", "user_name$", "user\tname", "USER-123_abc",
+		"user\nname", "usr", "us", "u_1", "A_B_C_D_E",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -76,7 +78,7 @@ func expectedValidEmail(email string) bool {
 	}
 	for i := dotIndex + 1; i < len(email); i++ {
 		c := email[i]
-		if !((c >= 'a' && c <= 'z')) {
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
 			return false
 		}
 	}
@@ -92,7 +94,10 @@ func FuzzValidateEmail(f *testing.F) {
 		"user@domain..com", "user@domain.c", strings.Repeat("a", 245) + "@example.com",
 		strings.Repeat("a", 250) + "@example.com", "user name@example.com",
 		"user@domain.123", "user@domain.org", "TEST%USER+123@sub.domain.com",
-		"user\x00@example.com", "user@ex\r\nample.com",
+		"user\x00@example.com", "user@ex\r\nample.com", "user@@domain.com",
+		"user@domain", "user@domain.", "user@.domain.com", "user@domain_com",
+		"u.s.e.r+123_45%67@sub-domain.example.org", "a@b.com", "a@b.c0m",
+		"user\t@example.com", "user@domain.info", "user@sub.domain.co.uk",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -132,9 +137,12 @@ func FuzzValidatePassword(f *testing.F) {
 	v := New()
 	seeds := []string{
 		"Password123!", "short", "lowercase123!", "UPPERCASE123!", "NoNumber!", "NoSpecial123", "",
-		"P1!aaaaa", strings.Repeat("A1!a", 25), strings.Repeat("A1!a", 26),
+		"P1!aaaaa", strings.Repeat("A1!a", 25), strings.Repeat("A1!a", 26), strings.Repeat("A1!a", 24),
 		"Password123\x00!", "Password 123!", "🔑Password123!", "Pass#123",
 		"A1!aA1!a", "Abcdefg123$", "VeryLongPasswordWithSpecialChars!99",
+		"P@ssw0rd2026", "12345678Aa!", "~~~~~Aa1!", "A1!a" + strings.Repeat("x", 96),
+		"Password123\n!", "Password123\r!", "Password123\t!",
+		"Aa1!4567", "1234567Aa!", "Aa1!Aa1!",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -160,9 +168,11 @@ func FuzzValidateFullName(f *testing.F) {
 	v := New()
 	seeds := []string{
 		"John Doe", "A", "", "   ", "Jane Mary Smith-Doe", "\t\n",
-		"Jo", strings.Repeat("a", 100), strings.Repeat("a", 101),
+		"Jo", strings.Repeat("a", 100), strings.Repeat("a", 101), strings.Repeat("a", 99),
 		"John\x00Doe", "John 123", "Jean-Luc Pic'ard", "   John   ",
 		"  A  ", "  AB  ", "Dr. Martin Luther King, Jr.",
+		"José González", "María-José", "  John Doe  ", "\r\nJohn\r\n",
+		"  John  Doe  ", "A B C D", "John\tDoe",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -195,6 +205,11 @@ func FuzzValidateUserRegistration(f *testing.F) {
 		{"valid_user", "valid@domain.org", "ValidPass123#", "Jane Doe"},
 		{"bad-user!", "john@example.com", "Password123!", "John Doe"},
 		{"john_doe", "john@example.com", "Password123!", "   "},
+		{"admin", "admin@bank.com", "AdminSecret123!", "System Administrator"},
+		{"user_123", "user123@test.io", "StrongP@ss1", "Test User"},
+		{"john_doe", "john@example.com", "Password123\x00!", "John Doe"},
+		{"john_doe", "john@ex\r\nample.com", "Password123!", "John Doe"},
+		{"user_99", "user99@domain.org", "SecurePass99$", "User NinetyNine"},
 	}
 	for _, s := range seeds {
 		f.Add(s.username, s.email, s.password, s.fullName)
@@ -220,6 +235,8 @@ func FuzzValidateAccountType(f *testing.F) {
 	seeds := []string{
 		"checking", "savings", "credit", "investment", "", "CHECKING", "checking ", " checking",
 		"Checking", "Savings", "Credit", "other", "123", "credit\x00",
+		"loan", "mortgage", "checking\n", "savings\r\n", "CREDIT",
+		"SAVINGS", "check", "save",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -254,6 +271,9 @@ func FuzzValidateAmount(f *testing.F) {
 		math.NaN(), math.Inf(1), math.Inf(-1),
 		1000000.0, 0.01, -0.0, math.MaxFloat64, math.SmallestNonzeroFloat64,
 		999999.99, 0.0001, 123.456, 1.0000001, -100.50,
+		0.009, 0.010, 500000.00, 1000000.00, 1000000.001,
+		-0.01, -1000000.0, 1e-7, 10.1234, 123456.78,
+		0.00001, 100000.0, 1.0, 0.1, 0.05, 999.99,
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -273,6 +293,8 @@ func FuzzValidateTransactionType(f *testing.F) {
 	seeds := []string{
 		"deposit", "withdrawal", "transfer", "invalid", "", "DEPOSIT", "deposit ", "withdrawal ",
 		"Deposit", "Withdrawal", "Transfer", "payment", "refund", "deposit\x00",
+		"TRANSFER", "deposit\n", "withdrawal\r\n", "fee", "interest",
+		"WITHDRAWAL", "dep", "with", "trans",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -308,6 +330,9 @@ func FuzzValidateDescription(f *testing.F) {
 		strings.Repeat("d", 255), strings.Repeat("d", 256), "Line 1\rLine 2",
 		"Normal payment", "Payment\r", "Payment\n", "\x00",
 		strings.Repeat("a", 254), "Emoji 💰 test",
+		"Payment\r\nwith newline", "Description with\tTab", "Description\x00Null",
+		strings.Repeat("🎉", 64), strings.Repeat("x", 255) + "\n",
+		"Grocery store #1024", "Salary payment - March 2026",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -341,6 +366,11 @@ func FuzzValidateTransfer(f *testing.F) {
 		{5, 5, 50.0, "Self transfer"},
 		{1, 2, 1000000.0, "Max transfer"},
 		{1, 2, 1000000.01, "Exceed max transfer"},
+		{1, 2, 100.0, "Payment\nNewLine"},
+		{1, 2, 100.0, "Payment\x00Null"},
+		{0, 1, 50.0, "Transfer from ID 0"},
+		{1, 0, 50.0, "Transfer to ID 0"},
+		{100, 200, 250.75, "Gift transfer"},
 	}
 	for _, s := range seeds {
 		f.Add(s.fromID, s.toID, s.amount, s.description)
@@ -376,6 +406,13 @@ func FuzzParsePaginationParam(f *testing.F) {
 		{"123456789012345678", 1},
 		{"-123", 10},
 		{" 10 ", 10},
+		{"1234567890123456789", 10},
+		{"9223372036854775807", 10},
+		{"-0", 5},
+		{"+10", 5},
+		{"10.5", 1},
+		{"100", 20},
+		{"0000", 0},
 	}
 	for _, s := range seeds {
 		f.Add(s.s, s.def)
@@ -427,6 +464,13 @@ func FuzzValidatePagination(f *testing.F) {
 		{1000, 50},
 		{-100, 10},
 		{1, -10},
+		{0, 0},
+		{1, 100},
+		{100, 1},
+		{2147483647, 100},
+		{-2147483648, 10},
+		{5, 20},
+		{10, 50},
 	}
 	for _, s := range seeds {
 		f.Add(s.page, s.limit)
@@ -462,6 +506,12 @@ func FuzzParseInt(f *testing.F) {
 		{"123 ", 5},
 		{"-0", 0},
 		{"000000000000000000", 0},
+		{"+123", 10},
+		{"9223372036854775807", 10},
+		{"18446744073709551615", 10},
+		{"123.45", 5},
+		{"500", 100},
+		{"00000", 0},
 	}
 	for _, s := range seeds {
 		f.Add(s.s, s.def)

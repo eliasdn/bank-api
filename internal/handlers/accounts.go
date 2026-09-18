@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"math/big"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -49,8 +48,8 @@ func (h *Handler) GetAccounts(c *gin.Context) {
 	}
 
 	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	page := validation.ParseInt(c.Query("page"), 1)
+	limit := validation.ParseInt(c.Query("limit"), 20)
 	if page < 1 {
 		page = 1
 	}

@@ -17,6 +17,7 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		c.Header("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
 		c.Header("X-Permitted-Cross-Domain-Policies", "none")
 		c.Header("X-DNS-Prefetch-Control", "off")
+		c.Header("Cache-Control", "no-store, max-age=0")
 		c.Next()
 	}
 }

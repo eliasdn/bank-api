@@ -18,6 +18,8 @@ func FuzzValidateUsername(f *testing.F) {
 		"user.name", "user+1", "USER_NAME_123", "a_b-c", "   user   ",
 		"user_name!", "user_name$", "user\tname", "USER-123_abc",
 		"user\nname", "usr", "us", "u_1", "A_B_C_D_E",
+		"user_name_with_trailing_spaces  ", "  leading_space_user", "null\x00character",
+		"emoji_user_😎", "special_chars_$%^&*", "very_long_username_that_is_exactly_50_chars_0123456",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -98,6 +100,8 @@ func FuzzValidateEmail(f *testing.F) {
 		"user@domain", "user@domain.", "user@.domain.com", "user@domain_com",
 		"u.s.e.r+123_45%67@sub-domain.example.org", "a@b.com", "a@b.c0m",
 		"user\t@example.com", "user@domain.info", "user@sub.domain.co.uk",
+		"user@sub-domain.domain.org", "plainaddress", "#@%^%#$@#$@#.com",
+		"email@domain.com (Joe Smith)", "email@domain@domain.com", ".email@domain.com",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -143,6 +147,7 @@ func FuzzValidatePassword(f *testing.F) {
 		"P@ssw0rd2026", "12345678Aa!", "~~~~~Aa1!", "A1!a" + strings.Repeat("x", 96),
 		"Password123\n!", "Password123\r!", "Password123\t!",
 		"Aa1!4567", "1234567Aa!", "Aa1!Aa1!",
+		"P@ssword1", "ComplexP@ssw0rd2026!", "P1#a2$b3", "password_NO_UPPER1!",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -333,6 +338,7 @@ func FuzzValidateDescription(f *testing.F) {
 		"Payment\r\nwith newline", "Description with\tTab", "Description\x00Null",
 		strings.Repeat("🎉", 64), strings.Repeat("x", 255) + "\n",
 		"Grocery store #1024", "Salary payment - March 2026",
+		"Special chars !@#$%^&*()", "Unicode test こんにちは", "Control char \x01 test",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)

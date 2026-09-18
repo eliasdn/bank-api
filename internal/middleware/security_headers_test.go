@@ -32,4 +32,5 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	assert.Equal(t, "max-age=31536000; includeSubDomains", w.Header().Get("Strict-Transport-Security"))
 	assert.Equal(t, "geolocation=(), camera=(), microphone=()", w.Header().Get("Permissions-Policy"))
 	assert.Equal(t, "none", w.Header().Get("X-Permitted-Cross-Domain-Policies"))
+	assert.Equal(t, "off", w.Header().Get("X-DNS-Prefetch-Control"))
 }

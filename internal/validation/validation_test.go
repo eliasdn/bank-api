@@ -188,9 +188,12 @@ func TestValidateAmount(t *testing.T) {
 		wantErr bool
 	}{
 		{"valid amount", 100.0, false},
+		{"valid cents amount", 10.55, false},
 		{"zero amount", 0, true},
 		{"negative amount", -10.0, true},
 		{"too large amount", 1000001.0, true},
+		{"sub-cent amount", 0.001, true},
+		{"fractional cent amount", 10.005, true},
 		{"NaN amount", math.NaN(), true},
 		{"positive infinity amount", math.Inf(1), true},
 		{"negative infinity amount", math.Inf(-1), true},

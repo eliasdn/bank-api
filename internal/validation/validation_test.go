@@ -249,6 +249,9 @@ func TestValidateDescription(t *testing.T) {
 		{"valid description", "Rent payment for March", false},
 		{"empty description", "", false},
 		{"too long description", strings.Repeat("a", 256), true},
+		{"description with null byte", "Payment\x00for item", true},
+		{"description with newline", "Payment\nfor item", true},
+		{"description with carriage return", "Payment\rfor item", true},
 	}
 
 	for _, tt := range tests {

@@ -194,10 +194,16 @@ func (v *Validator) ValidateTransactionType(transactionType string) error {
 	}
 }
 
-// ValidateDescription validates transaction/transfer description length
+// ValidateDescription validates transaction/transfer description length and rejects null bytes and line breaks to prevent CRLF/null-byte injection
 func (v *Validator) ValidateDescription(description string) error {
 	if len(description) > MaxDescriptionLength {
 		return errors.NewValidationError("description cannot exceed %d characters", MaxDescriptionLength)
+	}
+	for i := 0; i < len(description); i++ {
+		c := description[i]
+		if c == 0 || c == '\r' || c == '\n' {
+			return errors.NewValidationError("description cannot contain null bytes or line breaks")
+		}
 	}
 	return nil
 }

@@ -32,7 +32,7 @@ func generateAccountNumber() string {
 }
 
 type CreateAccountRequest struct {
-	AccountType string `json:"account_type"`
+	AccountType string `json:"account_type" binding:"omitempty,max=20"`
 }
 
 func (h *Handler) GetAccounts(c *gin.Context) {

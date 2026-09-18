@@ -42,7 +42,7 @@ type WithdrawRequest struct {
 type TransferRequest struct {
 	ToAccountID uint    `json:"to_account_id" binding:"required"`
 	Amount      float64 `json:"amount" binding:"required,gt=0"`
-	Description string  `json:"description"`
+	Description string  `json:"description" binding:"omitempty,max=255"`
 }
 
 // DepositResponse represents a deposit response

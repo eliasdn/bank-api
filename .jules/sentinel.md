@@ -54,3 +54,8 @@
 **Vulnerability:** The `User` struct's `PasswordHash` field lacked the `json:"-"` struct tag. When user objects were serialized to JSON (such as during audit logging of user registration, profile updates, and deletions), the bcrypt password hash was included in cleartext JSON in audit log entries.
 **Learning:** Default Go JSON struct field tags serialize all public fields. Omitting `json:"-"` on sensitive credential fields allows confidential credentials/hashes to leak into logs, responses, or external systems.
 **Prevention:** Always add `json:"-"` struct tags to sensitive credential and secret fields on data models to ensure they are excluded from automatic JSON serialization.
+
+## 2026-09-19 - Non-Finite Floating Point Validation Bypass
+**Vulnerability:** `ValidateAmount` checked `amount <= 0` and `amount > 1000000` but omitted non-finite floating-point checks. In IEEE 754 arithmetic (and Go float comparisons), comparisons against `math.NaN()` always evaluate to false, allowing `NaN` values to bypass range validation checks.
+**Learning:** Standard comparison operators (`<=`, `>`) do not catch `NaN` values because all floating-point comparisons with `NaN` evaluate to `false`.
+**Prevention:** Explicitly validate numeric inputs with `math.IsNaN(val)` and `math.IsInf(val, 0)` prior to relational range comparisons in critical financial or numeric validation paths.

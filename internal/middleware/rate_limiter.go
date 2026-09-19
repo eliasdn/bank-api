@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bank-api/internal/config"
+	"bank-api/internal/validation"
 	"net/http"
 	"strconv"
 	"sync"
@@ -203,7 +204,7 @@ func (rl *RateLimiter) RateLimit() gin.HandlerFunc {
 			var userStr string
 			switch v := userID.(type) {
 			case uint:
-				userStr = strconv.FormatUint(uint64(v), 10)
+				userStr = validation.FormatUint(uint64(v))
 			case float64:
 				userStr = strconv.FormatFloat(v, 'f', -1, 64)
 			case string:
@@ -281,7 +282,7 @@ func (rl *RateLimiter) GetRateLimitStatus(c *gin.Context) gin.H {
 		var userStr string
 		switch v := userID.(type) {
 		case uint:
-			userStr = strconv.FormatUint(uint64(v), 10)
+			userStr = validation.FormatUint(uint64(v))
 		case float64:
 			userStr = strconv.FormatFloat(v, 'f', -1, 64)
 		case string:

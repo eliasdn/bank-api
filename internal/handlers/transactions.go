@@ -12,7 +12,7 @@ import (
 
 // Deposit handles deposit transactions
 func (h *Handler) Deposit(c *gin.Context) {
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
@@ -103,7 +103,7 @@ func (h *Handler) Deposit(c *gin.Context) {
 
 // Withdraw handles withdrawal transactions
 func (h *Handler) Withdraw(c *gin.Context) {
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
@@ -205,7 +205,7 @@ func (h *Handler) Withdraw(c *gin.Context) {
 
 // Transfer handles transfer transactions
 func (h *Handler) Transfer(c *gin.Context) {
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
@@ -343,7 +343,7 @@ func (h *Handler) Transfer(c *gin.Context) {
 
 // GetTransactions handles getting transactions with pagination
 func (h *Handler) GetTransactions(c *gin.Context) {
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return

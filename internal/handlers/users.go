@@ -135,7 +135,7 @@ func (h *Handler) GetUser(c *gin.Context) {
 	}
 
 	// Production mode logic
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
@@ -184,7 +184,7 @@ func (h *Handler) handleTestUser(c *gin.Context) {
 }
 
 func (h *Handler) UpdateUser(c *gin.Context) {
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
@@ -266,7 +266,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 }
 
 func (h *Handler) DeleteUser(c *gin.Context) {
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return

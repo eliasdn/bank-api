@@ -79,3 +79,8 @@
 **Vulnerability:** User full name validation previously checked length constraints (`MinFullNameLength = 2`, `MaxFullNameLength = 100`) and non-emptiness, but permitted null bytes (`\x00`), carriage returns (`\r`), and newlines (`\n`). This exposed user registration and profile update audit logs to CRLF log injection and potential null-byte truncation.
 **Learning:** Checking length and whitespace presence alone is insufficient for user name inputs when those inputs are written to structured application and audit logs.
 **Prevention:** Reject null bytes (`\x00`), carriage returns (`\r`), and newlines (`\n`) using byte loops during input validation for full name fields prior to storing or logging them.
+
+## 2026-09-24 - IP Spoofing and Rate Limit Bypass via X-Forwarded-For
+**Vulnerability:** The application used `gin.Default()` without configuring trusted proxies. By default, older versions of Gin blindly trust the `X-Forwarded-For` and `X-Real-IP` headers. This allowed attackers to easily spoof their IP address by injecting these headers, completely bypassing IP-based rate limiting (e.g., on brute-force susceptible login endpoints) and falsifying audit logs.
+**Learning:** Default settings in web frameworks regarding proxy headers are often insecurely permissive for convenience, but they expose applications directly connected to the internet to IP spoofing attacks.
+**Prevention:** Always explicitly configure trusted proxies for web frameworks. In Gin, call `router.SetTrustedProxies(nil)` immediately after initializing the router to disable blindly trusting all proxies, ensuring `ClientIP()` resolves to the secure, actual network connection address.

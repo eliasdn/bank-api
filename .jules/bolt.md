@@ -101,3 +101,7 @@
 ## 2026-09-19 - Optimize Account Number Generation
 **Learning:** Using `crypto/rand.Int` alongside `math/big.NewInt` for simple random number generation within a bounded range introduces significant allocation overhead and execution time (~1450 ns/op) compared to reading raw bytes and doing manual modular arithmetic.
 **Action:** When a cryptographically secure random number is required within a small range (e.g., generating an account number between 0 and 999999), use `crypto/rand.Read` to fetch 4 bytes into a `[4]byte` array, convert it to a `uint32`, and apply modulo arithmetic (`%`). This maintains security while reducing execution time to ~1200 ns/op and eliminating `math/big` heap allocations.
+## 2026-09-17 - Performance Optimization: Database Indexes
+**Optimization**: Added `gorm:"index"` tags to `UserID` in the `Account` struct and `AccountID` in the `Transaction` struct.
+**Rationale**: These fields are frequently queried in the handlers (e.g., `GetAccounts` filters by `user_id`, `GetTransactions` filters by `account_id`). Without indexes, these queries require full table scans, which become progressively slower as the number of records grows. Adding indexes allows the database to perform O(log N) or O(1) lookups.
+**Impact**: Substantially improves lookup query performance for accounts and transactions, ensuring predictable response times as the dataset scales.

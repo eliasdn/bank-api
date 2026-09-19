@@ -108,6 +108,9 @@ func TestValidateFullName(t *testing.T) {
 		{"too long", strings.Repeat("a", 101), true},
 		{"empty", "", true},
 		{"whitespace only", "   ", true},
+		{"full name with null byte", "John\x00Doe", true},
+		{"full name with newline", "John\nDoe", true},
+		{"full name with carriage return", "John\rDoe", true},
 	}
 
 	for _, tt := range tests {

@@ -4,3 +4,6 @@
 ## 2026-09-17 - Cleaning Tooling Artifacts
 **Learning:** Using temporary shell scripts (like `patch_*.sh`) and intermediate files (like `tmp.md` or `tmp.yaml`) to automate file editing is useful, but staging or committing them polls the repository.
 **Action:** Always ensure any tooling artifacts or temporary patching scripts are removed (`rm`) and unstaged before requesting code review or submitting a pull request.
+## 2026-09-18 - Parameter Names and Constraints Drift
+**Learning:** During codebase evolution, request DTOs (`TransferRequest`, `TransactionRequest`, `RegisterRequest`, `UpdateUserRequest`) are often modified by renaming fields (e.g. `target_account_id` to `to_account_id`, `full_name` to `fullName`, `reference` to `description`) or altering binding constraints (e.g. `email` `max=100` instead of 255). The `docs/openapi.yaml` may easily drift if these naming conventions and `binding` tag properties are not explicitly matched during the doc update.
+**Action:** Always systematically `cat` and read the full struct definitions and their binding tags (`json:"..." binding:"..."`) from `.go` files instead of assuming or hallucinating properties, and perfectly replicate those exact types and string restrictions in the OpenAPI schema.

@@ -1,8 +1,8 @@
 package middleware
 
 import (
+	"bank-api/internal/validation"
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -65,14 +65,14 @@ func (rl *RequestLogger) LoggingMiddleware() gin.HandlerFunc {
 			case string:
 				userID = v
 			case uint:
-				userID = strconv.FormatUint(uint64(v), 10)
+				userID = validation.FormatUint(uint64(v))
 			}
 		} else if val, exists := c.Get("user_id"); exists {
 			switch v := val.(type) {
 			case string:
 				userID = v
 			case uint:
-				userID = strconv.FormatUint(uint64(v), 10)
+				userID = validation.FormatUint(uint64(v))
 			}
 		}
 
@@ -180,14 +180,14 @@ func (al *AuditLogger) Log(c *gin.Context, action, resource, resourceID, descrip
 		case string:
 			userID = v
 		case uint:
-			userID = strconv.FormatUint(uint64(v), 10)
+			userID = validation.FormatUint(uint64(v))
 		}
 	} else if val, exists := c.Get("user_id"); exists {
 		switch v := val.(type) {
 		case string:
 			userID = v
 		case uint:
-			userID = strconv.FormatUint(uint64(v), 10)
+			userID = validation.FormatUint(uint64(v))
 		}
 	}
 

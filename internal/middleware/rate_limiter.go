@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bank-api/internal/config"
+	"bank-api/internal/validation"
 	"net/http"
 	"sync"
 	"time"

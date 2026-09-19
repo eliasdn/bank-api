@@ -81,15 +81,28 @@ func (e *ValidationError) Error() string {
 	return e.Message
 }
 
-// NewValidationError creates a new validation error
+// NewValidationError creates a new validation error.
+// Optimized: Avoids fmt.Sprintf reflection overhead when no formatting args are provided.
 func NewValidationError(format string, args ...interface{}) *ValidationError {
+	if len(args) == 0 {
+		return &ValidationError{
+			Message: format,
+		}
+	}
 	return &ValidationError{
 		Message: fmt.Sprintf(format, args...),
 	}
 }
 
-// NewValidationErrorWithField creates a new validation error with field information
+// NewValidationErrorWithField creates a new validation error with field information.
+// Optimized: Avoids fmt.Sprintf reflection overhead when no formatting args are provided.
 func NewValidationErrorWithField(field, format string, args ...interface{}) *ValidationError {
+	if len(args) == 0 {
+		return &ValidationError{
+			Message: format,
+			Field:   field,
+		}
+	}
 	return &ValidationError{
 		Message: fmt.Sprintf(format, args...),
 		Field:   field,

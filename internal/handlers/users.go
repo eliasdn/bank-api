@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"bank-api/internal/models"
@@ -162,7 +161,7 @@ func (h *Handler) GetUser(c *gin.Context) {
 func (h *Handler) handleTestUser(c *gin.Context) {
 	var user models.User
 	idParam := c.Param("id")
-	userID, err := strconv.ParseUint(idParam, 10, 64)
+	userID, err := validation.ParseUint(idParam, 0)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
 		return

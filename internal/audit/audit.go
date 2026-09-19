@@ -2,6 +2,7 @@ package audit
 
 import (
 	"bank-api/internal/models"
+	"bank-api/internal/validation"
 	"encoding/json"
 	"log"
 	"strconv"
@@ -93,7 +94,7 @@ func (l *DatabaseAuditLogger) LogTransaction(userID uint, transaction *models.Tr
 		UserID:      userID,
 		Action:      transaction.TransactionType,
 		Resource:    "transaction",
-		ResourceID:  strconv.FormatUint(uint64(transaction.ID), 10),
+		ResourceID:  validation.FormatUint(uint64(transaction.ID)),
 		Description: description,
 		NewValue:    string(transactionJSON),
 		IPAddress:   ipAddress,

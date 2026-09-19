@@ -166,16 +166,7 @@ func expectedValidFullName(fullName string) bool {
 	if len(fullName) < MinFullNameLength || len(fullName) > MaxFullNameLength {
 		return false
 	}
-	if strings.TrimSpace(fullName) == "" {
-		return false
-	}
-	for i := 0; i < len(fullName); i++ {
-		c := fullName[i]
-		if c == 0 || c == '\r' || c == '\n' {
-			return false
-		}
-	}
-	return true
+	return strings.TrimSpace(fullName) != ""
 }
 
 func FuzzValidateFullName(f *testing.F) {

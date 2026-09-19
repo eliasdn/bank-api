@@ -39,7 +39,7 @@ func (u *User) CheckPassword(password string) bool {
 
 type Account struct {
 	gorm.Model
-	UserID        uint          `gorm:"not null"`
+	UserID        uint          `gorm:"not null;index"`
 	AccountNumber string        `gorm:"unique;not null"`
 	AccountType   string        `gorm:"not null;check:account_type IN ('checking', 'savings', 'credit')"`
 	Balance       float64       `gorm:"not null;default:0"`
@@ -48,7 +48,7 @@ type Account struct {
 
 type Transaction struct {
 	gorm.Model
-	AccountID       uint    `gorm:"not null"`
+	AccountID       uint    `gorm:"not null;index"`
 	Amount          float64 `gorm:"not null"`
 	TransactionType string  `gorm:"not null;check:transaction_type IN ('deposit', 'withdrawal', 'transfer')"`
 	Reference       string

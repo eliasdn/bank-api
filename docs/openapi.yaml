@@ -481,7 +481,7 @@ components:
         - username
         - email
         - password
-        - full_name
+        - fullName
       properties:
         username:
           type: string
@@ -492,14 +492,14 @@ components:
         email:
           type: string
           format: email
-          maxLength: 255
+          maxLength: 100
           example: john.doe@example.com
         password:
           type: string
           minLength: 8
           maxLength: 100
           example: SecurePass123!
-        full_name:
+        fullName:
           type: string
           minLength: 2
           maxLength: 100
@@ -538,26 +538,22 @@ components:
           format: double
           minimum: 0.01
           example: 100.50
-        reference:
-          type: string
-          maxLength: 255
-          example: "Salary deposit"
 
     TransferRequest:
       type: object
       required:
         - amount
-        - target_account_id
+        - to_account_id
       properties:
         amount:
           type: number
           format: double
           minimum: 0.01
           example: 100.50
-        target_account_id:
+        to_account_id:
           type: integer
           example: 123
-        reference:
+        description:
           type: string
           maxLength: 255
           example: "Rent payment"
@@ -706,7 +702,7 @@ components:
         email:
           type: string
           format: email
-          maxLength: 255
+          maxLength: 100
           example: john.doe@example.com
 
     UpdateUserRequest:

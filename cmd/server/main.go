@@ -30,6 +30,9 @@ func main() {
 	// Create Gin router with middleware
 	router := gin.Default()
 
+	// Securely configure trusted proxies to prevent IP spoofing
+	router.SetTrustedProxies(nil)
+
 	// Add security headers middleware
 	router.Use(middleware.SecurityHeadersMiddleware())
 

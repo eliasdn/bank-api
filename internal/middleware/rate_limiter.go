@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"bank-api/internal/config"
-
 	"net/http"
 	"sync"
 	"time"

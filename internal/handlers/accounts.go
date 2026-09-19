@@ -36,7 +36,7 @@ type CreateAccountRequest struct {
 }
 
 func (h *Handler) GetAccounts(c *gin.Context) {
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
@@ -93,7 +93,7 @@ func (h *Handler) GetAccounts(c *gin.Context) {
 }
 
 func (h *Handler) CreateAccount(c *gin.Context) {
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
@@ -141,7 +141,7 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 }
 
 func (h *Handler) GetAccount(c *gin.Context) {
-	userID := c.GetUint("userID")
+	userID := getUserID(c)
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return

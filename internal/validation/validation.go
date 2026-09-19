@@ -145,13 +145,19 @@ func (v *Validator) ValidatePassword(password string) error {
 	return nil
 }
 
-// ValidateFullName validates full name format
+// ValidateFullName validates full name format and rejects null bytes and line breaks to prevent CRLF/null-byte injection
 func (v *Validator) ValidateFullName(fullName string) error {
 	if len(fullName) < MinFullNameLength || len(fullName) > MaxFullNameLength {
 		return errors.NewValidationError("full name must be between %d and %d characters", MinFullNameLength, MaxFullNameLength)
 	}
 	if strings.TrimSpace(fullName) == "" {
 		return errors.NewValidationError("full name cannot be empty")
+	}
+	for i := 0; i < len(fullName); i++ {
+		c := fullName[i]
+		if c == 0 || c == '\r' || c == '\n' {
+			return errors.NewValidationError("full name cannot contain null bytes or line breaks")
+		}
 	}
 	return nil
 }

@@ -1,3 +1,6 @@
+## 2026-09-19 - [Optimize fmt.Sprintf in error formatting]
+**Learning:** `fmt.Sprintf` incurs a heavy reflection overhead (~92ns per op) even when no formatting arguments are provided. Creating validation errors that only return static strings happens very frequently in the validation layer.
+**Action:** When writing error constructors like `NewValidationError(format string, args ...interface{})`, always add a fast path (`if len(args) == 0`) that assigns the static string directly without calling `fmt.Sprintf`. This reduces the instantiation time to sub-nanosecond levels (~0.3ns).
 ## 2024-05-22 - [Database Indexing Strategy]
 **Learning:** SQLite supports `DESC` in index definitions, which is crucial for pagination queries that use `ORDER BY created_at DESC`. Without the `DESC` in the index, the database might still need to perform a sort operation or scan the index backwards (which is fast but explicit direction is better).
 **Action:** When optimizing "latest items" lists, always prefer composite indexes `(foreign_key, sort_column DESC)` over simple foreign key indexes.

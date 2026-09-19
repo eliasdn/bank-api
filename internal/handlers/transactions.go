@@ -12,27 +12,26 @@ import (
 
 // Deposit handles deposit transactions
 func (h *Handler) Deposit(c *gin.Context) {
-	userIDVal, ok := c.Get("userID")
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-	userID, ok := userIDVal.(uint)
-	if !ok {
+	userID := c.GetUint("userID")
+	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	accountID := c.Param("id")
+	accountIDStr := c.Param("id")
+	accountID := validation.ParseInt(accountIDStr, 0)
+	if accountID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		return
+	}
+
 	var account models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", accountID, userID).First(&account).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
 		return
 	}
 
-	var deposit struct {
-		Amount float64 `json:"amount" binding:"required,gt=0"`
-	}
+	var deposit dto.DepositRequest
 	if err := c.ShouldBindJSON(&deposit); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid deposit amount"})
 		return
@@ -104,27 +103,26 @@ func (h *Handler) Deposit(c *gin.Context) {
 
 // Withdraw handles withdrawal transactions
 func (h *Handler) Withdraw(c *gin.Context) {
-	userIDVal, ok := c.Get("userID")
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-	userID, ok := userIDVal.(uint)
-	if !ok {
+	userID := c.GetUint("userID")
+	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	accountID := c.Param("id")
+	accountIDStr := c.Param("id")
+	accountID := validation.ParseInt(accountIDStr, 0)
+	if accountID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		return
+	}
+
 	var account models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", accountID, userID).First(&account).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
 		return
 	}
 
-	var withdrawal struct {
-		Amount float64 `json:"amount" binding:"required,gt=0"`
-	}
+	var withdrawal dto.WithdrawRequest
 	if err := c.ShouldBindJSON(&withdrawal); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid withdrawal amount"})
 		return
@@ -207,29 +205,26 @@ func (h *Handler) Withdraw(c *gin.Context) {
 
 // Transfer handles transfer transactions
 func (h *Handler) Transfer(c *gin.Context) {
-	userIDVal, ok := c.Get("userID")
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-	userID, ok := userIDVal.(uint)
-	if !ok {
+	userID := c.GetUint("userID")
+	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	fromAccountID := c.Param("id")
+	fromAccountIDStr := c.Param("id")
+	fromAccountID := validation.ParseInt(fromAccountIDStr, 0)
+	if fromAccountID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		return
+	}
+
 	var fromAccount models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", fromAccountID, userID).First(&fromAccount).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "source account not found"})
 		return
 	}
 
-	var transfer struct {
-		ToAccountID uint    `json:"to_account_id" binding:"required"`
-		Amount      float64 `json:"amount" binding:"required,gt=0"`
-		Description string  `json:"description"`
-	}
+	var transfer dto.TransferRequest
 	if err := c.ShouldBindJSON(&transfer); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid transfer request"})
 		return
@@ -348,18 +343,19 @@ func (h *Handler) Transfer(c *gin.Context) {
 
 // GetTransactions handles getting transactions with pagination
 func (h *Handler) GetTransactions(c *gin.Context) {
-	userIDVal, ok := c.Get("userID")
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-	userID, ok := userIDVal.(uint)
-	if !ok {
+	userID := c.GetUint("userID")
+	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	accountID := c.Param("id")
+	accountIDStr := c.Param("id")
+	accountID := validation.ParseInt(accountIDStr, 0)
+	if accountID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		return
+	}
+
 	var account models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", accountID, userID).First(&account).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})

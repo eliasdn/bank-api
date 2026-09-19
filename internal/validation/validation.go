@@ -177,6 +177,10 @@ func (v *Validator) ValidateAmount(amount float64) error {
 	if amount > 1000000 { // $1M limit
 		return errors.NewValidationError("amount exceeds maximum allowed limit")
 	}
+	// Ensure amount has at most 2 decimal places (cents) to prevent sub-cent/salami-slicing attacks
+	if math.Abs(amount*100-math.Round(amount*100)) > 1e-6 {
+		return errors.NewValidationError("amount cannot have more than 2 decimal places")
+	}
 	return nil
 }
 
@@ -190,10 +194,16 @@ func (v *Validator) ValidateTransactionType(transactionType string) error {
 	}
 }
 
-// ValidateDescription validates transaction/transfer description length
+// ValidateDescription validates transaction/transfer description length and rejects null bytes and line breaks to prevent CRLF/null-byte injection
 func (v *Validator) ValidateDescription(description string) error {
 	if len(description) > MaxDescriptionLength {
 		return errors.NewValidationError("description cannot exceed %d characters", MaxDescriptionLength)
+	}
+	for i := 0; i < len(description); i++ {
+		c := description[i]
+		if c == 0 || c == '\r' || c == '\n' {
+			return errors.NewValidationError("description cannot contain null bytes or line breaks")
+		}
 	}
 	return nil
 }
@@ -214,7 +224,7 @@ func (v *Validator) ValidateTransfer(fromAccountID, toAccountID uint, amount flo
 
 // ParsePaginationParam parses string numbers for pagination without allocation/reflection, returns default on error/empty
 func ParsePaginationParam(s string, defaultValue int) int {
-	if s == "" {
+	if s == "" || len(s) > 18 {
 		return defaultValue
 	}
 	var n int
@@ -224,6 +234,9 @@ func ParsePaginationParam(s string, defaultValue int) int {
 			return defaultValue
 		}
 		n = n*10 + int(c-'0')
+	}
+	if n < 0 {
+		return defaultValue
 	}
 	return n
 }
@@ -244,7 +257,7 @@ func (v *Validator) ValidatePagination(page, limit int) error {
 // call overhead of strconv.Atoi. If the string is empty or contains non-numeric
 // characters, or if it would cause an integer overflow, it returns the provided default value.
 func ParseInt(s string, def int) int {
-	if s == "" {
+	if s == "" || len(s) > 18 {
 		return def
 	}
 	res := 0
@@ -253,15 +266,10 @@ func ParseInt(s string, def int) int {
 		if c < '0' || c > '9' {
 			return def
 		}
-
-		// Prevent integer overflow. Assuming 64-bit architecture, max int is ~9e18
-		// For our use cases (pagination page/limit), checking length is sufficient and fast.
-		// If string has more than 18 characters, it might overflow or be too large for our needs.
-		if i > 18 {
-			return def
-		}
-
 		res = res*10 + int(c-'0')
+	}
+	if res < 0 {
+		return def
 	}
 	// Check if all characters were '0'
 	if res == 0 {

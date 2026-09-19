@@ -1,8 +1,8 @@
 package middleware
 
 import (
+	"bank-api/internal/validation"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"bank-api/internal/config"
@@ -57,7 +57,7 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		if subFloat, ok := claims["sub"].(float64); ok {
 			c.Set("userID", uint(subFloat))
 		} else if subStr, ok := claims["sub"].(string); ok {
-			if id, err := strconv.ParseUint(subStr, 10, 64); err == nil {
+			if id, err := validation.ParseUint(subStr, 0); err == nil {
 				c.Set("userID", uint(id))
 			} else {
 				c.Set("userID", subStr)

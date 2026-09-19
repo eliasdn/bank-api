@@ -342,6 +342,15 @@ func TestTransfer(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			setupAuth:      true,
 		},
+		{
+			name:           "invalid description - oversized",
+			fromAccountID:  "1",
+			toAccountID:    account2.ID,
+			amount:         100.0,
+			description:    fmt.Sprintf("%0256d", 1),
+			expectedStatus: http.StatusBadRequest,
+			setupAuth:      true,
+		},
 	}
 
 	for _, tt := range tests {

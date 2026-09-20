@@ -250,7 +250,7 @@ rm bank_test.db
 ### Production Checklist
 - [ ] Change default JWT secret
 - [ ] Use HTTPS in production
-- [ ] Configure proper CORS policies
+- [x] Configure proper CORS policies
 - [ ] Set up database encryption
 - [ ] Configure log rotation
 - [ ] Set up monitoring alerts

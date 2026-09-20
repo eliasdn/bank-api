@@ -33,6 +33,9 @@ func main() {
 	// Securely configure trusted proxies to prevent IP spoofing
 	router.SetTrustedProxies(nil)
 
+	// Add CORS middleware
+	router.Use(middleware.CORSMiddleware(cfg))
+
 	// Add security headers middleware
 	router.Use(middleware.SecurityHeadersMiddleware())
 

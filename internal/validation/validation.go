@@ -279,18 +279,5 @@ func ParseInt(s string, def int) int {
 	if res < 0 {
 		return def
 	}
-	// Check if all characters were '0'
-	if res == 0 {
-		allZeros := true
-		for i := 0; i < len(s); i++ {
-			if s[i] != '0' {
-				allZeros = false
-				break
-			}
-		}
-		if !allZeros {
-			return def
-		}
-	}
 	return res
 }

@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -53,6 +54,16 @@ type AppConfig struct {
 		Level string
 	}
 
+	// CORS configuration
+	CORS struct {
+		AllowedOrigins   []string
+		AllowedMethods   []string
+		AllowedHeaders   []string
+		ExposedHeaders   []string
+		AllowCredentials bool
+		MaxAge           time.Duration
+	}
+
 	// Environment
 	Environment string
 }
@@ -96,6 +107,17 @@ func LoadConfig() *AppConfig {
 	// Logging
 	cfg.Logging.Level = getEnv("LOG_LEVEL", "info")
 
+	// CORS
+	cfg.CORS.AllowedOrigins = getStringSlice("CORS_ALLOWED_ORIGINS", []string{"*"})
+	cfg.CORS.AllowedMethods = getStringSlice("CORS_ALLOWED_METHODS", []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"})
+	cfg.CORS.AllowedHeaders = getStringSlice("CORS_ALLOWED_HEADERS", []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Request-ID"})
+	cfg.CORS.ExposedHeaders = getStringSlice("CORS_EXPOSED_HEADERS", []string{"Content-Length", "X-Request-ID", "Retry-After"})
+
+	allowCredsStr := getEnv("CORS_ALLOW_CREDENTIALS", "false")
+	cfg.CORS.AllowCredentials = allowCredsStr == "true"
+
+	cfg.CORS.MaxAge = getDuration("CORS_MAX_AGE", 12*time.Hour)
+
 	// Validate required configuration
 	if cfg.JWT.Secret == "" {
 		log.Fatal("JWT_SECRET must be set")
@@ -131,7 +153,29 @@ func LoadTestConfig() *AppConfig {
 
 	cfg.Logging.Level = "debug"
 
+	cfg.CORS.AllowedOrigins = []string{"*"}
+	cfg.CORS.AllowedMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	cfg.CORS.AllowedHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Request-ID"}
+	cfg.CORS.ExposedHeaders = []string{"Content-Length", "X-Request-ID", "Retry-After"}
+	cfg.CORS.AllowCredentials = false
+	cfg.CORS.MaxAge = 12 * time.Hour
+
 	return cfg
+}
+
+func getStringSlice(key string, defaultValue []string) []string {
+	if value, exists := os.LookupEnv(key); exists {
+		if value == "" {
+			return []string{}
+		}
+		// Assuming comma separated values
+		parts := strings.Split(value, ",")
+		for i, part := range parts {
+			parts[i] = strings.TrimSpace(part)
+		}
+		return parts
+	}
+	return defaultValue
 }
 
 func getEnv(key, defaultValue string) string {

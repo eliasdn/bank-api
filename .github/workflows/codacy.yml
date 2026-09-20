@@ -7,6 +7,7 @@ on:
     branches: [ "main", "master" ]
   schedule:
     - cron: '0 0 * * 0' # Run weekly on Sundays
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -67,10 +68,11 @@ jobs:
         with:
           sarif_file: gosec-results.sarif
 
-      # 4. Process scan outputs, aggregate findings, and create GitHub Issues & PRs tagging @jules
-      - name: Process Security Alerts and Create Issues/PRs
-        if: always()
+      # 4. Process scan outputs, aggregate findings, and create GitHub Issues with 'jules' label
+      - name: Process Security Alerts and Dispatch to Jules
+        if: always() && github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python3 scripts/process_security_results.py gosec-results.json govulncheck-results.json
+

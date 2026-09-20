@@ -171,7 +171,7 @@ def ensure_label_exists(label_name, color="d73a4a", description=""):
         cmd.extend(["--description", description])
     run_cmd(cmd)
 
-def create_issue_and_pr(group, base_commit, default_branch, existing_issues, existing_prs, jules_tracker):
+def create_security_issue(group, existing_issues, jules_tracker):
     rule_id = group["rule_id"]
     group_id = group["id"]
     severity = group["severity"]
@@ -241,48 +241,7 @@ def create_issue_and_pr(group, base_commit, default_branch, existing_issues, exi
         else:
             print(f"Failed to create issue for {group_id}: {err}")
 
-    # If assigned to Jules, Jules will plan, fix, and open its own PR directly.
-    # We do NOT pre-create an empty tracking PR/branch to avoid conflicts and branch spam.
-    if assign_to_jules:
-        print(f"Task dispatched to Jules; skipping empty tracking PR creation for {group_id}.")
-        return
 
-    # Check existing PRs if non-Jules issue
-    slug = group_id.lower().replace("-", "_")
-    branch_name = f"security/fix-{slug}"
-    pr_exists = any(branch_name in pr.get("headRefName", "") or group_id in pr.get("title", "") for pr in existing_prs)
-
-    if pr_exists:
-        print(f"PR/Branch already exists for {branch_name}, skipping PR creation.")
-    else:
-        # Create branch & PR from the base_commit
-        print(f"Creating dedicated branch and PR for {group_id} from {base_commit}...")
-        run_cmd(["git", "config", "user.name", "github-actions[bot]"])
-        run_cmd(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"])
-
-        run_cmd(["git", "checkout", "-f", base_commit])
-        run_cmd(["git", "checkout", "-b", branch_name])
-        run_cmd(["git", "commit", "--allow-empty", "-m", f"security: setup tracking branch for {group_id}"])
-        code, out, err = run_cmd(["git", "push", "origin", branch_name])
-
-        if code == 0:
-            pr_title = f"Fix {group_id}: {group['title']}"
-            pr_body = (
-                f"Automated PR created for security alert **{group_id}**.\n\n"
-                f"**Severity:** {severity}\n"
-                f"**Details:** {group['details']}\n"
-            )
-            pr_cmd = ["gh", "pr", "create", "--title", pr_title, "--body", pr_body, "--base", default_branch, "--head", branch_name]
-            code_pr, out_pr, err_pr = run_cmd(pr_cmd)
-            if code_pr == 0:
-                print(f"PR created successfully: {out_pr}")
-            else:
-                print(f"Failed to create PR for {group_id}: {err_pr}")
-        else:
-            print(f"Failed to push branch {branch_name}: {err}")
-
-        # Switch back to base_commit
-        run_cmd(["git", "checkout", "-f", base_commit])
 
 def main():
     gosec_file = sys.argv[1] if len(sys.argv) > 1 else "gosec-results.json"
@@ -299,25 +258,18 @@ def main():
         key=lambda g: SEVERITY_ORDER.get(g.get("severity", "MEDIUM").upper(), 99)
     )
 
-    default_branch = get_default_branch()
-
-    # Capture original base commit hash or commit ref to prevent branch chaining
-    _, base_commit, _ = run_cmd(["git", "rev-parse", "HEAD"])
-    if not base_commit:
-        base_commit = os.environ.get("GITHUB_SHA", default_branch)
-
-    # Fetch existing issues and PRs once
+    # Fetch existing issues once
     existing_issues = get_existing_issues()
-    existing_prs = get_existing_prs()
     active_jules_count = get_active_jules_count(existing_issues)
     jules_tracker = {"count": active_jules_count}
 
     print(f"Found {len(sorted_groups)} security finding groups to process.")
-    print(f"Active Jules tasks: {active_jules_count}/{MAX_JULES_TASKS}. Target base branch: {default_branch}.")
+    print(f"Active Jules tasks: {active_jules_count}/{MAX_JULES_TASKS}.")
 
     for group in sorted_groups:
         print(f"Processing group: {group['id']} - Severity: {group['severity']} - Occurrences: {len(group['occurrences'])}")
-        create_issue_and_pr(group, base_commit, default_branch, existing_issues, existing_prs, jules_tracker)
+        create_security_issue(group, existing_issues, jules_tracker)
+
 
 if __name__ == "__main__":
     main()

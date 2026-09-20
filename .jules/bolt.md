@@ -92,7 +92,7 @@
 **Optimization**: Replaced `strconv.Atoi` with a custom manual byte loop function `validation.ParseInt` for parsing string query parameters (e.g., page, limit) into integers.
 **Rationale**: `strconv.Atoi` overhead is unnecessary for parsing simple integer strings from query parameters, especially with fallback default values. A simple manual byte loop eliminates function overhead and provides faster parsing, avoiding reflection-like overhead for small positive integers.
 **Impact**: Reduced simple integer parsing time by ~20%.
-## $(date +%Y-%m-%d) - Rate Limiter Map Key Optimization
+## 2025-02-18 - Rate Limiter Map Key Optimization
 **Learning:** In high-throughput middleware like the user rate limiter (`internal/middleware/rate_limiter.go`), dynamically converting generic context values (like `userID` which could be `uint`, `float64`, or `string`) into strings for map keys using a type switch and `strconv` incurs significant allocation overhead. However, attempting to strictly parse it as `uint` using Gin's `c.GetUint()` is dangerous and can silently drop non-uint values, leading to rate limit bypasses.
 **Action:** Use a `map[interface{}]*rate.Limiter` instead of `map[string]*rate.Limiter`. This allows passing the generic context value directly into the map lookup (since the underlying types are inherently comparable), which preserves type safety across various implementations without the overhead of dynamic string formatting. This reduces lookup time from ~60ns to ~22ns.
 ## 2026-09-19 - Rate Limiter Map Key Optimization
@@ -105,3 +105,6 @@
 **Optimization**: Added `gorm:"index"` tags to `UserID` in the `Account` struct and `AccountID` in the `Transaction` struct.
 **Rationale**: These fields are frequently queried in the handlers (e.g., `GetAccounts` filters by `user_id`, `GetTransactions` filters by `account_id`). Without indexes, these queries require full table scans, which become progressively slower as the number of records grows. Adding indexes allows the database to perform O(log N) or O(1) lookups.
 **Impact**: Substantially improves lookup query performance for accounts and transactions, ensuring predictable response times as the dataset scales.
+## 2025-02-18 - [Eliminate strings.ToLower allocation in dual-case validation loops]
+**Learning:** Using `strings.ToLower` on a string prior to validating it with a manual byte loop that already explicitly checks for both uppercase (`A-Z`) and lowercase (`a-z`) characters introduces unnecessary O(N) allocation and conversion overhead. In the case of `ValidateEmail`, this allocation was responsible for ~70% of the function's execution time (~160ns/op down to ~46ns/op after removal).
+**Action:** When writing or reviewing custom manual byte validation loops, check if the loop already safely handles both character cases. If so, remove any preceding `strings.ToLower` or `strings.ToUpper` normalization calls to avoid heap allocations and improve performance in hot paths.

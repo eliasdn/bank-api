@@ -6,6 +6,7 @@ import (
 	"bank-api/internal/models"
 	"bank-api/internal/validation"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,8 +15,24 @@ import (
 )
 
 type Handler struct {
-	DB     db.DBInterface
-	Config *config.AppConfig
+	DB        db.DBInterface
+	Config    *config.AppConfig
+	dummyHash string
+	dummyOnce sync.Once
+}
+
+func (h *Handler) getDummyHash() string {
+	h.dummyOnce.Do(func() {
+		if h.dummyHash == "" {
+			cost := bcrypt.DefaultCost
+			if h.Config != nil && h.Config.Security.BcryptCost > 0 {
+				cost = h.Config.Security.BcryptCost
+			}
+			hash, _ := bcrypt.GenerateFromPassword([]byte("dummy_password_for_timing_prevention"), cost)
+			h.dummyHash = string(hash)
+		}
+	})
+	return h.dummyHash
 }
 
 type RegisterRequest struct {
@@ -89,15 +106,16 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	var user models.User
 	err := h.DB.Where("username = ?", req.Username).First(&user).Error
 
+	// If user not found, use dummy hash for comparison to prevent timing attacks
+	targetHash := user.PasswordHash
 	if err != nil {
-		// Prevent timing attack by simulating password hash time
-		bcrypt.GenerateFromPassword([]byte(req.Password), h.Config.Security.BcryptCost)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
-		return
+		targetHash = h.getDummyHash()
 	}
 
-	// Verify password using bcrypt
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+	// Always perform bcrypt comparison to maintain constant time
+	bcryptErr := bcrypt.CompareHashAndPassword([]byte(targetHash), []byte(req.Password))
+
+	if err != nil || bcryptErr != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}

@@ -9,7 +9,9 @@ on:
     - cron: '0 0 * * 0' # Run weekly on Sundays
 
 permissions:
-  contents: read
+  contents: write
+  issues: write
+  pull-requests: write
   security-events: write # Required to post alerts into GitHub Security -> Code scanning
 
 jobs:
@@ -20,6 +22,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -27,17 +31,34 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       # 1. Check dependencies for known CVEs using Go's official scanner
       - name: Run govulncheck
-        uses: golang/govulncheck-action@v1
-        with:
-          go-package: './...'
+        if: always()
+        continue-on-error: true
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck -json ./... > govulncheck-results.json 2>&1 || true
 
       # 2. AST Static Code Security Scan (hardcoded credentials, SQLi, weak crypto, unsafe blocks)
       - name: Run Gosec Security Scanner
+        if: always()
+        continue-on-error: true
         uses: securego/gosec@master
         with:
-          args: '-fmt=sarif -out=gosec-results.sarif -severity=medium -confidence=medium ./...'
+          args: '-fmt=json -out=gosec-results.json -severity=low -confidence=low ./...'
+
+      # 2b. Run Gosec Security Scanner for SARIF export
+      - name: Run Gosec Security Scanner (SARIF)
+        if: always()
+        continue-on-error: true
+        uses: securego/gosec@master
+        with:
+          args: '-fmt=sarif -out=gosec-results.sarif -severity=low -confidence=low ./...'
 
       # 3. Upload Gosec results to GitHub Security tab (visible on PRs and repo dashboard)
       - name: Upload SARIF report
@@ -45,3 +66,11 @@ jobs:
         if: always() # Ensures report uploads even if gosec detects vulnerabilities
         with:
           sarif_file: gosec-results.sarif
+
+      # 4. Process scan outputs, aggregate findings, and create GitHub Issues & PRs tagging @jules
+      - name: Process Security Alerts and Create Issues/PRs
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/process_security_results.py gosec-results.json govulncheck-results.json

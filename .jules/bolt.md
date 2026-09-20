@@ -108,3 +108,6 @@
 ## 2025-02-18 - [Eliminate strings.ToLower allocation in dual-case validation loops]
 **Learning:** Using `strings.ToLower` on a string prior to validating it with a manual byte loop that already explicitly checks for both uppercase (`A-Z`) and lowercase (`a-z`) characters introduces unnecessary O(N) allocation and conversion overhead. In the case of `ValidateEmail`, this allocation was responsible for ~70% of the function's execution time (~160ns/op down to ~46ns/op after removal).
 **Action:** When writing or reviewing custom manual byte validation loops, check if the loop already safely handles both character cases. If so, remove any preceding `strings.ToLower` or `strings.ToUpper` normalization calls to avoid heap allocations and improve performance in hot paths.
+## 2026-09-21 - [Zero-Value Redundant Pass Validation]
+**Learning:** In `internal/validation/validation.go`, `ParseInt` avoids redundant O(N) validation passes for zero-value results because the primary parsing loop already safely rejects non-digit characters, improving performance for zero-valued strings. The second `allZeros` check is unnecessary.
+**Action:** When implementing or reviewing custom string parsing loops, ensure that edge cases like zero are properly handled by the initial condition checks and primary loop, eliminating the need for subsequent redundant O(N) passes.

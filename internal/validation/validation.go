@@ -62,7 +62,9 @@ func (v *Validator) ValidateUsername(username string) error {
 
 // ValidateEmail validates email format
 func (v *Validator) ValidateEmail(email string) error {
-	email = strings.TrimSpace(strings.ToLower(email))
+	// Optimization: strings.TrimSpace only creates a slice header (no allocation).
+	// Avoid strings.ToLower since the manual byte loop below checks both cases.
+	email = strings.TrimSpace(email)
 	if len(email) < MinEmailLength || len(email) > MaxEmailLength {
 		return errors.NewValidationError("email must be between %d and %d characters", MinEmailLength, MaxEmailLength)
 	}

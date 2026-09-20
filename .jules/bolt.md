@@ -111,3 +111,7 @@
 ## 2026-09-21 - [Zero-Value Redundant Pass Validation]
 **Learning:** In `internal/validation/validation.go`, `ParseInt` avoids redundant O(N) validation passes for zero-value results because the primary parsing loop already safely rejects non-digit characters, improving performance for zero-valued strings. The second `allZeros` check is unnecessary.
 **Action:** When implementing or reviewing custom string parsing loops, ensure that edge cases like zero are properly handled by the initial condition checks and primary loop, eliminating the need for subsequent redundant O(N) passes.
+
+## 2026-09-20 - [Deduplicate Integer Parsing Logic]
+**Learning:** Duplicating highly-optimized manual byte loops (like ParseInt and ParsePaginationParam) across packages or within the same package leads to maintenance overhead, redundant tests, and increased binary size without any additional performance benefit. When performing deduplication refactors, ensure that any related benchmarks, test references, and unused imports in the modified files are also cleaned up or migrated to the new centralized location.
+**Action:** Always centralize optimized logic (such as string-to-integer parsing) and reuse it across the application instead of duplicating it. Clean up associated redundant tests (like FuzzParsePaginationParam) to align with DRY principles.

@@ -404,63 +404,6 @@ func FuzzValidateTransfer(f *testing.F) {
 	})
 }
 
-func FuzzParsePaginationParam(f *testing.F) {
-	seeds := []struct {
-		s   string
-		def int
-	}{
-		{"10", 1},
-		{"0", 10},
-		{"-5", 1},
-		{"abc", 20},
-		{"", 5},
-		{"0007", 7},
-		{"9999999999999999999", 10},
-		{"123a", 10},
-		{"000", 0},
-		{"123456789012345678", 1},
-		{"-123", 10},
-		{" 10 ", 10},
-		{"1234567890123456789", 10},
-		{"9223372036854775807", 10},
-		{"-0", 5},
-		{"+10", 5},
-		{"10.5", 1},
-		{"100", 20},
-		{"0000", 0},
-	}
-	for _, s := range seeds {
-		f.Add(s.s, s.def)
-	}
-
-	f.Fuzz(func(t *testing.T, s string, def int) {
-		res := ParsePaginationParam(s, def)
-		if s == "" || len(s) > 18 {
-			if res != def {
-				t.Errorf("ParsePaginationParam for %q with def %d returned %d, expected default %d", s, def, res, def)
-			}
-			return
-		}
-		allDigits := true
-		for i := 0; i < len(s); i++ {
-			if s[i] < '0' || s[i] > '9' {
-				allDigits = false
-				break
-			}
-		}
-		if !allDigits {
-			if res != def {
-				t.Errorf("ParsePaginationParam non-digit string %q returned %d, expected default %d", s, res, def)
-			}
-			return
-		}
-		if expected, err := strconv.Atoi(s); err == nil && expected >= 0 {
-			if res != expected {
-				t.Errorf("ParsePaginationParam mismatch for %q: got %d, expected %d", s, res, expected)
-			}
-		}
-	})
-}
 
 func FuzzValidatePagination(f *testing.F) {
 	v := New()

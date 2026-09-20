@@ -177,11 +177,6 @@ def create_security_issue(group, existing_issues, jules_tracker):
     severity = group["severity"]
     title = f"Security [{severity}]: {group['title']}"
 
-    # Ensure standard labels exist
-    ensure_label_exists("security", "d73a4a", "Security finding")
-    ensure_label_exists(f"{severity.lower()}-priority", "b60205" if severity == "HIGH" else "fbca04", f"{severity} priority finding")
-    ensure_label_exists("jules", "1d76db", "Autonomous remediation by Google Labs Jules")
-
     # Check existing issues
     issue_exists = any(group_id in iss.get("title", "") or group["title"] in iss.get("title", "") for iss in existing_issues)
 
@@ -257,6 +252,13 @@ def main():
         all_groups.values(),
         key=lambda g: SEVERITY_ORDER.get(g.get("severity", "MEDIUM").upper(), 99)
     )
+
+    # Ensure standard labels exist once
+    ensure_label_exists("security", "d73a4a", "Security finding")
+    ensure_label_exists("high-priority", "b60205", "High priority finding")
+    ensure_label_exists("medium-priority", "fbca04", "Medium priority finding")
+    ensure_label_exists("low-priority", "0e8a16", "Low priority finding")
+    ensure_label_exists("jules", "1d76db", "Autonomous remediation by Google Labs Jules")
 
     # Fetch existing issues once
     existing_issues = get_existing_issues()

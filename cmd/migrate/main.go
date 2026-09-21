@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -53,9 +55,16 @@ func main() {
 }
 
 func resetDatabase(dbPath string) error {
+	// Clean and validate dbPath to prevent path traversal
+	cleanPath := filepath.Clean(dbPath)
+	if filepath.IsAbs(cleanPath) || strings.HasPrefix(cleanPath, "..") {
+		return fmt.Errorf("invalid database path: path traversal detected")
+	}
+
 	// Remove the database file to reset
-	if _, err := os.Stat(dbPath); err == nil {
-		return os.Remove(dbPath)
+	// #nosec G703 -- cleanPath is validated above to prevent path traversal
+	if _, err := os.Stat(cleanPath); err == nil {
+		return os.Remove(cleanPath)
 	}
 	return nil
 }

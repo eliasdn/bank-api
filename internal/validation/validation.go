@@ -126,7 +126,7 @@ func (v *Validator) ValidatePassword(password string) error {
 			hasLower = true
 		case c >= '0' && c <= '9':
 			hasNumber = true
-		case strings.IndexByte(`!@#$%^&*(),.?":{}|<>`, c) >= 0:
+		case c == '!' || c == '@' || c == '#' || c == '$' || c == '%' || c == '^' || c == '&' || c == '*' || c == '(' || c == ')' || c == ',' || c == '.' || c == '?' || c == '"' || c == ':' || c == '{' || c == '}' || c == '|' || c == '<' || c == '>':
 			hasSpecial = true
 		}
 	}

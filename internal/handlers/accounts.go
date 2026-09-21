@@ -4,7 +4,7 @@ import (
 	"bank-api/internal/models"
 	"bank-api/internal/validation"
 	"crypto/rand"
-	"math/big"
+	"encoding/binary"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,12 +14,24 @@ import (
 // generateAccountNumber generates a cryptographically secure random 9-character account number.
 // Uses crypto/rand instead of math/rand to prevent predictable account number generation.
 // Optimized to avoid fmt.Sprintf overhead by formatting directly into a byte slice.
+// Uses rejection sampling to prevent modulo bias while avoiding math/big allocations.
 func generateAccountNumber() string {
-	nBig, err := rand.Int(rand.Reader, big.NewInt(1000000))
-	var n int
-	if err == nil {
-		n = int(nBig.Int64())
+	var buf [4]byte
+	var val uint32
+
+	// maxAcceptable = 2^32 - (2^32 % 1000000) = 4294000000
+	const maxAcceptable uint32 = 4294000000
+
+	for {
+		_, _ = rand.Read(buf[:])
+		val = binary.LittleEndian.Uint32(buf[:])
+		if val < maxAcceptable {
+			break
+		}
 	}
+
+	n := int(val % 1000000)
+
 	b := make([]byte, 9)
 	b[0] = 'A'
 	b[1] = 'C'

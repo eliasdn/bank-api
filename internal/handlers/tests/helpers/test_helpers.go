@@ -23,8 +23,9 @@ func SetupTestDB(t *testing.T) (*gorm.DB, func()) {
 	// which uses the new migration system instead of AutoMigrate
 
 	cleanup := func() {
-		sqlDB, _ := gormDB.DB()
-		sqlDB.Close()
+		if sqlDB, err := gormDB.DB(); err == nil {
+			_ = sqlDB.Close()
+		}
 	}
 
 	return gormDB, cleanup

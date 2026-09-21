@@ -80,7 +80,7 @@
 **Learning:** Checking length and whitespace presence alone is insufficient for user name inputs when those inputs are written to structured application and audit logs.
 **Prevention:** Reject null bytes (`\x00`), carriage returns (`\r`), and newlines (`\n`) using byte loops during input validation for full name fields prior to storing or logging them.
 
-## $(date +%Y-%m-%d) - Prevent Rate-Limit Bypass via Context Type Mismatch
+## 2026-09-21 - Prevent Rate-Limit Bypass via Context Type Mismatch
 **Vulnerability:** Middlewares like rate limiters use values from the request context (like `userID`) for tracking. `Gin` context values are loosely typed (`interface{}`). When upstream authentication middleware (like `auth.go` using JWTs) stored the `sub` claim as varying types (`string`, `float64`, `uint`), downstream middlewares or handlers calling strict getters like `c.GetUint("userID")` would fail type assertions and return `0`. This caused all such requests to share the `0` rate limit bucket (or bypass user limits entirely) while potentially still executing business logic if downstream handlers didn't fail securely, or caused false negatives during authorization checks.
 **Learning:** Using strict type getters (e.g. `c.GetUint()`) on loosely typed context frameworks without defensive type checking creates severe regressions if upstream middlewares change the type of the value being stored, silently dropping identifiers and creating logic bypasses.
 **Prevention:** Always use safe helper functions to extract numeric IDs from contexts (e.g., a `getUserID` helper using a type switch for `uint`, `float64`, and `string`) rather than relying on strict framework type assertions.
@@ -88,3 +88,18 @@
 **Vulnerability:** The application used `gin.Default()` without configuring trusted proxies. By default, older versions of Gin blindly trust the `X-Forwarded-For` and `X-Real-IP` headers. This allowed attackers to easily spoof their IP address by injecting these headers, completely bypassing IP-based rate limiting (e.g., on brute-force susceptible login endpoints) and falsifying audit logs.
 **Learning:** Default settings in web frameworks regarding proxy headers are often insecurely permissive for convenience, but they expose applications directly connected to the internet to IP spoofing attacks.
 **Prevention:** Always explicitly configure trusted proxies for web frameworks. In Gin, call `router.SetTrustedProxies(nil)` immediately after initializing the router to disable blindly trusting all proxies, ensuring `ClientIP()` resolves to the secure, actual network connection address.
+
+## 2026-09-21 - Unhandled error when configuring trusted proxies
+**Vulnerability:** The application configured Gin to not trust any proxies (`router.SetTrustedProxies(nil)`), but failed to handle the potential error returned by this function call. While `nil` is currently safe in the Gin framework version used, ignoring security configuration errors can lead to silently running in an insecure state if the framework changes or the configuration relies on external variables.
+**Learning:** Security-critical configurations, such as setting trusted proxies to prevent IP spoofing, should strictly handle any returned errors to ensure the application fails to start rather than running insecurely.
+**Prevention:** Always check and explicitly handle errors returned by security configuration methods in web frameworks, even if they are expected to succeed.
+
+## 2026-09-21 - Insecure Directory Permissions for SQLite Database
+**Vulnerability:** The database migration runner created the directory for the SQLite database with `0755` permissions. This allowed any user on the system to read the directory contents, potentially exposing the database file (and sensitive information within it) to unauthorized local users.
+**Learning:** Directories containing sensitive files, like databases, must have restrictive permissions to prevent local information disclosure. Defaulting to `0755` for new directories is often too permissive for secure environments.
+**Prevention:** Use `0750` or `0700` when creating directories that will hold sensitive files like databases, ensuring only the application owner and potentially the group can access them.
+
+## 2026-09-21 - Integer Overflow in custom ParseUint
+**Vulnerability:** A custom integer parsing function `ParseUint` contained an integer overflow vulnerability where the manual calculation `byte('0' + u - q*10)` could overflow before assigning to a byte slice if the order of operations wasn't strictly grouped to prevent intermediate unsigned underflow/overflow.
+**Learning:** Custom implementations of core library functions (like `strconv.ParseUint` or `FormatUint`) are highly susceptible to integer overflow or bounds check failures.
+**Prevention:** When optimizing parsing or formatting with manual byte loops, always use explicit parenthesis (e.g. `byte('0' + (u - q*10))`) to enforce safe evaluation order and prevent integer overflow regressions.

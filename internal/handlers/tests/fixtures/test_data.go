@@ -9,13 +9,13 @@ var TestUsers = map[string]models.User{
 	"alice": {
 		Username:     "alice",
 		Email:        "alice@example.com",
-		PasswordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
+		PasswordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // dummy test password hash
 		FullName:     "Alice Johnson",
 	},
 	"bob": {
 		Username:     "bob",
 		Email:        "bob@example.com",
-		PasswordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
+		PasswordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // dummy test password hash
 		FullName:     "Bob Smith",
 	},
 }

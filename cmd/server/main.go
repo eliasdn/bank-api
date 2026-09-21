@@ -31,7 +31,9 @@ func main() {
 	router := gin.Default()
 
 	// Securely configure trusted proxies to prevent IP spoofing
-	router.SetTrustedProxies(nil)
+	if err := router.SetTrustedProxies(nil); err != nil {
+		log.Fatalf("Failed to configure trusted proxies: %v", err)
+	}
 
 	// Add CORS middleware
 	router.Use(middleware.CORSMiddleware(cfg))

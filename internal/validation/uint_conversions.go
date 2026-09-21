@@ -13,7 +13,7 @@ func FormatUint(u uint64) string {
 	for u >= 10 {
 		q := u / 10
 		i--
-		b[i] = byte('0' + u - q*10)
+		b[i] = byte('0' + (u - q*10))
 		u = q
 	}
 	i--

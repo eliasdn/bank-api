@@ -103,3 +103,7 @@
 **Vulnerability:** A custom integer parsing function `ParseUint` contained an integer overflow vulnerability where the manual calculation `byte('0' + u - q*10)` could overflow before assigning to a byte slice if the order of operations wasn't strictly grouped to prevent intermediate unsigned underflow/overflow.
 **Learning:** Custom implementations of core library functions (like `strconv.ParseUint` or `FormatUint`) are highly susceptible to integer overflow or bounds check failures.
 **Prevention:** When optimizing parsing or formatting with manual byte loops, always use explicit parenthesis (e.g. `byte('0' + (u - q*10))`) to enforce safe evaluation order and prevent integer overflow regressions.
+## 2026-09-22 - Suppress SAST False Positives for Hardcoded Test Credentials
+**Vulnerability:** Static Application Security Testing (SAST) tools like `gosec` frequently flag dummy password hashes (e.g., bcrypt hashes) used in test fixture data as hardcoded credentials (rule G101).
+**Learning:** While hardcoded credentials in production code are a critical vulnerability, dummy hashes in test files are false positives. Leaving them unaddressed can cause alert fatigue and obscure real vulnerabilities in automated security scans.
+**Prevention:** Always use explicit suppression comments (e.g., `// #nosec G101`) to acknowledge and ignore false positives in test data, ensuring security scan results remain actionable and relevant.

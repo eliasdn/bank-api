@@ -13,11 +13,11 @@ func FormatUint(u uint64) string {
 	for u >= 10 {
 		q := u / 10
 		i--
-		b[i] = byte('0' + (u - q*10))
+		b[i] = byte('0' + (u - q*10)) // #nosec G115 -- u - q*10 is mathematically <= 9
 		u = q
 	}
 	i--
-	b[i] = byte('0' + u)
+	b[i] = byte('0' + u) // #nosec G115 -- u is single digit < 10
 	return string(b[i:])
 }
 

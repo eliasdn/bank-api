@@ -382,7 +382,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TransactionRequest'
+              $ref: '#/components/schemas/DepositRequest'
       responses:
         '201':
           description: Deposit processed successfully
@@ -414,7 +414,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TransactionRequest'
+              $ref: '#/components/schemas/WithdrawRequest'
       responses:
         '201':
           description: Withdrawal processed successfully
@@ -533,7 +533,17 @@ components:
           - credit
           maxLength: 20
           example: checking
-    TransactionRequest:
+    DepositRequest:
+      type: object
+      required:
+      - amount
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 100.5
+    WithdrawRequest:
       type: object
       required:
       - amount

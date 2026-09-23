@@ -97,7 +97,10 @@ func (eh *ErrorHandler) HandleError(c *gin.Context, err error) {
 	response.Error.Message = message
 	response.Error.Details = details
 
-	c.JSON(statusCode, response)
+	// Avoid writing response headers/body if already written by a handler or upstream middleware
+	if !c.Writer.Written() {
+		c.JSON(statusCode, response)
+	}
 }
 
 // ErrorHandlerMiddleware returns a Gin middleware for error handling

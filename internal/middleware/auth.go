@@ -3,7 +3,6 @@ package middleware
 import (
 	"bank-api/internal/validation"
 	"net/http"
-	"strings"
 
 	"bank-api/internal/config"
 
@@ -13,10 +12,14 @@ import (
 
 type AuthMiddleware struct {
 	config *config.AppConfig
+	secret []byte
 }
 
 func NewAuthMiddleware(cfg *config.AppConfig) *AuthMiddleware {
-	return &AuthMiddleware{config: cfg}
+	return &AuthMiddleware{
+		config: cfg,
+		secret: []byte(cfg.JWT.Secret),
+	}
 }
 
 func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
@@ -27,17 +30,17 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		if tokenString == authHeader {
+		if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Bearer token not found"})
 			return
 		}
+		tokenString := authHeader[7:]
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
-			return []byte(m.config.JWT.Secret), nil
+			return m.secret, nil
 		})
 
 		if err != nil || !token.Valid {

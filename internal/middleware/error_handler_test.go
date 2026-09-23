@@ -212,4 +212,24 @@ func TestErrorHandler(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "forbidden")
 		assert.Contains(t, w.Body.String(), "insufficient permissions")
 	})
+
+	t.Run("HandleError when response already written", func(t *testing.T) {
+		mockLogger := &MockLogger{}
+		eh := NewErrorHandler(mockLogger)
+
+		router := gin.New()
+		router.Use(eh.ErrorHandlerMiddleware())
+		router.GET("/test", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "ok"})
+			c.Error(errors.New("late_error", "Late error after response written", http.StatusInternalServerError))
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, `{"status":"ok"}`, w.Body.String())
+		assert.Contains(t, mockLogger.LastMessage, "Request error")
+	})
 }

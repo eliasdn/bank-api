@@ -404,7 +404,6 @@ func FuzzValidateTransfer(f *testing.F) {
 	})
 }
 
-
 func FuzzValidatePagination(f *testing.F) {
 	v := New()
 	seeds := []struct {

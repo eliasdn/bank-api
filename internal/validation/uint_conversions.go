@@ -22,7 +22,7 @@ func FormatUint(u uint64) string {
 }
 
 const maxUint64 = 1<<64 - 1
-const cutoff = maxUint64/10
+const cutoff = maxUint64 / 10
 
 // ParseUint is a highly optimized manual byte loop for parsing positive uint64 from strings.
 // It avoids function call overhead and is faster for simple decimal parsing in hot paths.

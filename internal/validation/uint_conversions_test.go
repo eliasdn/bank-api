@@ -39,8 +39,8 @@ func TestParseUint(t *testing.T) {
 		{"", 5, 5, true},
 		{"12a3", 5, 5, true},
 		{"999999999999999999999", 5, 5, true}, // len > 20
-		{"18446744073709551616", 5, 5, true}, // exact overflow
-		{"99999999999999999999", 5, 5, true}, // overflow len 20
+		{"18446744073709551616", 5, 5, true},  // exact overflow
+		{"99999999999999999999", 5, 5, true},  // overflow len 20
 	}
 
 	for _, tt := range tests {

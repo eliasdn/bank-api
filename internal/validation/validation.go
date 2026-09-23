@@ -8,12 +8,12 @@ import (
 
 // Validation rules
 const (
-	MinUsernameLength = 3
-	MaxUsernameLength = 50
-	MinPasswordLength = 8
-	MaxPasswordLength = 100
-	MinFullNameLength = 2
-	MaxFullNameLength = 100
+	MinUsernameLength    = 3
+	MaxUsernameLength    = 50
+	MinPasswordLength    = 8
+	MaxPasswordLength    = 100
+	MinFullNameLength    = 2
+	MaxFullNameLength    = 100
 	MinEmailLength       = 5
 	MaxEmailLength       = 255
 	MaxDescriptionLength = 255
@@ -229,7 +229,6 @@ func (v *Validator) ValidateTransfer(fromAccountID, toAccountID uint, amount flo
 	}
 	return nil
 }
-
 
 // ValidatePagination validates pagination parameters
 func (v *Validator) ValidatePagination(page, limit int) error {

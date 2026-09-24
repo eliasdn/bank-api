@@ -386,13 +386,15 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 
 	// Get paginated transactions
 	var transactions []models.Transaction
-	if err := h.DB.Where("account_id = ?", account.ID).
-		Order("created_at desc").
-		Limit(limit).
-		Offset(offset).
-		Find(&transactions).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve transactions"})
-		return
+	if int64(offset) < total {
+		if err := h.DB.Where("account_id = ?", account.ID).
+			Order("created_at desc").
+			Limit(limit).
+			Offset(offset).
+			Find(&transactions).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve transactions"})
+			return
+		}
 	}
 
 	// Convert to DTOs

@@ -77,13 +77,15 @@ func (h *Handler) GetAccounts(c *gin.Context) {
 
 	// Get paginated accounts
 	var accounts []models.Account
-	if err := h.DB.Where("user_id = ?", userID).
-		Order("created_at desc").
-		Limit(limit).
-		Offset(offset).
-		Find(&accounts).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve accounts"})
-		return
+	if int64(offset) < total {
+		if err := h.DB.Where("user_id = ?", userID).
+			Order("created_at desc").
+			Limit(limit).
+			Offset(offset).
+			Find(&accounts).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve accounts"})
+			return
+		}
 	}
 
 	if accounts == nil {

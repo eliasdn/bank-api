@@ -127,3 +127,6 @@
 ## 2026-09-24 - [Replace RWMutex with sync.Map in High-Throughput Read Paths]
 **Learning:** In highly concurrent, read-heavy scenarios like the middleware rate limiter (`internal/middleware/rate_limiter.go`), using a standard `map` combined with `sync.RWMutex` introduces significant lock contention overhead.
 **Action:** When implementing or optimizing high-throughput concurrent maps where keys are mostly read and rarely created/deleted, replace `map` + `sync.RWMutex` with `sync.Map`. This leverages lock-free reads and optimizes concurrent execution, reducing operation time from ~115ns down to ~39ns.
+## 2026-09-24 - [Skip empty DB queries on out-of-bounds pagination]
+**Learning:** When retrieving paginated data, if the requested offset (derived from page and limit) is greater than or equal to the total number of records, querying the database will yield zero results. Proceeding with a paginated `Find` query in this state introduces unnecessary database network I/O and query execution overhead.
+**Action:** Always check `if int64(offset) < total` before executing the data fetch query when the total count is already available (especially when cached). If the offset is out-of-bounds, skip the query and return an empty list directly.

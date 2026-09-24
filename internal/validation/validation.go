@@ -109,7 +109,7 @@ func (v *Validator) ValidateEmail(email string) error {
 	return nil
 }
 
-// ValidatePassword validates password strength
+// ValidatePassword validates password strength and rejects null bytes and line breaks to prevent truncation and injection vulnerabilities
 func (v *Validator) ValidatePassword(password string) error {
 	if len(password) < MinPasswordLength || len(password) > MaxPasswordLength {
 		return errors.NewValidationError("password must be between %d and %d characters", MinPasswordLength, MaxPasswordLength)
@@ -119,6 +119,9 @@ func (v *Validator) ValidatePassword(password string) error {
 	var hasUpper, hasLower, hasNumber, hasSpecial bool
 	for i := 0; i < len(password); i++ {
 		c := password[i]
+		if c == 0 || c == '\r' || c == '\n' {
+			return errors.NewValidationError("password cannot contain null bytes or line breaks")
+		}
 		switch {
 		case c >= 'A' && c <= 'Z':
 			hasUpper = true

@@ -123,6 +123,9 @@ func expectedValidPassword(password string) bool {
 	var hasUpper, hasLower, hasNumber, hasSpecial bool
 	for i := 0; i < len(password); i++ {
 		c := password[i]
+		if c == 0 || c == '\r' || c == '\n' {
+			return false
+		}
 		switch {
 		case c >= 'A' && c <= 'Z':
 			hasUpper = true

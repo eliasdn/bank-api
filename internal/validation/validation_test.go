@@ -81,6 +81,9 @@ func TestValidatePassword(t *testing.T) {
 		{"no number", "Password!", true},
 		{"no special char", "Password123", true},
 		{"too long", strings.Repeat("A", 101), true},
+		{"password with null byte", "Password123!\x00extra", true},
+		{"password with newline", "Password123!\nextra", true},
+		{"password with carriage return", "Password123!\rextra", true},
 	}
 
 	for _, tt := range tests {

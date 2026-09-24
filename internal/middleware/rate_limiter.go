@@ -15,14 +15,11 @@ import (
 type RateLimiter struct {
 	config *config.AppConfig
 	// IP-based limiters
-	ipLimiters map[string]*rate.Limiter
-	ipMutex    sync.RWMutex
+	ipLimiters sync.Map
 	// Strict IP-based limiters (e.g. auth endpoints)
-	authIpLimiters map[string]*rate.Limiter
-	authIpMutex    sync.RWMutex
+	authIpLimiters sync.Map
 	// User-based limiters
-	userLimiters map[interface{}]*rate.Limiter
-	userMutex    sync.RWMutex
+	userLimiters sync.Map
 	// Cleanup ticker
 	cleanupTicker *time.Ticker
 }
@@ -30,10 +27,7 @@ type RateLimiter struct {
 // NewRateLimiter creates a new rate limiter
 func NewRateLimiter(config *config.AppConfig) *RateLimiter {
 	rl := &RateLimiter{
-		config:         config,
-		ipLimiters:     make(map[string]*rate.Limiter),
-		authIpLimiters: make(map[string]*rate.Limiter),
-		userLimiters:   make(map[interface{}]*rate.Limiter),
+		config: config,
 	}
 
 	// Start cleanup routine only if not in test mode
@@ -47,133 +41,69 @@ func NewRateLimiter(config *config.AppConfig) *RateLimiter {
 
 // LimitByIP creates or gets a rate limiter for the given IP
 func (rl *RateLimiter) LimitByIP(ip string) *rate.Limiter {
-	rl.ipMutex.RLock()
-	limiter, exists := rl.ipLimiters[ip]
-	rl.ipMutex.RUnlock()
-
-	if !exists {
-		rl.ipMutex.Lock()
-		// Double-check after acquiring write lock
-		limiter, exists = rl.ipLimiters[ip]
-		if !exists {
-			// 100 requests per minute per IP
-			limiter = rate.NewLimiter(rate.Every(time.Minute), 100)
-			rl.ipLimiters[ip] = limiter
-		}
-		rl.ipMutex.Unlock()
+	if val, ok := rl.ipLimiters.Load(ip); ok {
+		return val.(*rate.Limiter)
 	}
 
-	return limiter
+	// 100 requests per minute per IP
+	limiter := rate.NewLimiter(rate.Every(time.Minute), 100)
+	actual, _ := rl.ipLimiters.LoadOrStore(ip, limiter)
+	return actual.(*rate.Limiter)
 }
 
 // StrictLimitByIP creates or gets a strict rate limiter for the given IP
 func (rl *RateLimiter) StrictLimitByIP(ip string) *rate.Limiter {
-	rl.authIpMutex.RLock()
-	limiter, exists := rl.authIpLimiters[ip]
-	rl.authIpMutex.RUnlock()
-
-	if !exists {
-		rl.authIpMutex.Lock()
-		// Double-check after acquiring write lock
-		limiter, exists = rl.authIpLimiters[ip]
-		if !exists {
-			// 5 requests per minute per IP for sensitive endpoints
-			limiter = rate.NewLimiter(rate.Every(time.Minute), 5)
-			rl.authIpLimiters[ip] = limiter
-		}
-		rl.authIpMutex.Unlock()
+	if val, ok := rl.authIpLimiters.Load(ip); ok {
+		return val.(*rate.Limiter)
 	}
 
-	return limiter
+	// 5 requests per minute per IP for sensitive endpoints
+	limiter := rate.NewLimiter(rate.Every(time.Minute), 5)
+	actual, _ := rl.authIpLimiters.LoadOrStore(ip, limiter)
+	return actual.(*rate.Limiter)
 }
 
 // LimitByUser creates or gets a rate limiter for the given user ID
 func (rl *RateLimiter) LimitByUser(userID interface{}) *rate.Limiter {
-	rl.userMutex.RLock()
-	limiter, exists := rl.userLimiters[userID]
-	rl.userMutex.RUnlock()
-
-	if !exists {
-		rl.userMutex.Lock()
-		// Double-check after acquiring write lock
-		limiter, exists = rl.userLimiters[userID]
-		if !exists {
-			// 1000 requests per hour per authenticated user
-			limiter = rate.NewLimiter(rate.Every(time.Hour), 1000)
-			rl.userLimiters[userID] = limiter
-		}
-		rl.userMutex.Unlock()
+	if val, ok := rl.userLimiters.Load(userID); ok {
+		return val.(*rate.Limiter)
 	}
 
-	return limiter
+	// 1000 requests per hour per authenticated user
+	limiter := rate.NewLimiter(rate.Every(time.Hour), 1000)
+	actual, _ := rl.userLimiters.LoadOrStore(userID, limiter)
+	return actual.(*rate.Limiter)
 }
 
 // cleanupExpiredLimiters removes expired rate limiters
 func (rl *RateLimiter) cleanupExpiredLimiters() {
 	for range rl.cleanupTicker.C {
-		// Identify IP limiters to clean up
-		var ipsToRemove []string
-		rl.ipMutex.RLock()
-		for ip, limiter := range rl.ipLimiters {
-			// Simple cleanup - remove if no recent activity
+		// Identify and remove IP limiters
+		rl.ipLimiters.Range(func(key, value interface{}) bool {
+			limiter := value.(*rate.Limiter)
 			if limiter.Tokens() == 100 { // Full bucket indicates no recent usage
-				ipsToRemove = append(ipsToRemove, ip)
+				rl.ipLimiters.Delete(key)
 			}
-		}
-		rl.ipMutex.RUnlock()
+			return true
+		})
 
-		// Remove identified IP limiters
-		if len(ipsToRemove) > 0 {
-			rl.ipMutex.Lock()
-			for _, ip := range ipsToRemove {
-				if limiter, exists := rl.ipLimiters[ip]; exists && limiter.Tokens() == 100 {
-					delete(rl.ipLimiters, ip)
-				}
-			}
-			rl.ipMutex.Unlock()
-		}
-
-		// Identify strict IP limiters to clean up
-		var authIpsToRemove []string
-		rl.authIpMutex.RLock()
-		for ip, limiter := range rl.authIpLimiters {
+		// Identify and remove strict IP limiters
+		rl.authIpLimiters.Range(func(key, value interface{}) bool {
+			limiter := value.(*rate.Limiter)
 			if limiter.Tokens() == 5 {
-				authIpsToRemove = append(authIpsToRemove, ip)
+				rl.authIpLimiters.Delete(key)
 			}
-		}
-		rl.authIpMutex.RUnlock()
+			return true
+		})
 
-		// Remove identified strict IP limiters
-		if len(authIpsToRemove) > 0 {
-			rl.authIpMutex.Lock()
-			for _, ip := range authIpsToRemove {
-				if limiter, exists := rl.authIpLimiters[ip]; exists && limiter.Tokens() == 5 {
-					delete(rl.authIpLimiters, ip)
-				}
-			}
-			rl.authIpMutex.Unlock()
-		}
-
-		// Identify user limiters to clean up
-		var usersToRemove []interface{}
-		rl.userMutex.RLock()
-		for userID, limiter := range rl.userLimiters {
+		// Identify and remove user limiters
+		rl.userLimiters.Range(func(key, value interface{}) bool {
+			limiter := value.(*rate.Limiter)
 			if limiter.Tokens() == 1000 { // Full bucket indicates no recent usage
-				usersToRemove = append(usersToRemove, userID)
+				rl.userLimiters.Delete(key)
 			}
-		}
-		rl.userMutex.RUnlock()
-
-		// Remove identified user limiters
-		if len(usersToRemove) > 0 {
-			rl.userMutex.Lock()
-			for _, userID := range usersToRemove {
-				if limiter, exists := rl.userLimiters[userID]; exists && limiter.Tokens() == 1000 {
-					delete(rl.userLimiters, userID)
-				}
-			}
-			rl.userMutex.Unlock()
-		}
+			return true
+		})
 	}
 }
 

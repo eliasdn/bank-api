@@ -259,12 +259,14 @@ paths:
           type: integer
           minimum: 1
           maximum: 100
-          default: 10
-      - name: cursor
+          default: 20
+      - name: page
         in: query
-        description: Pagination cursor
+        description: Pagination page number
         schema:
-          type: string
+          type: integer
+          minimum: 1
+          default: 1
       responses:
         '200':
           description: Accounts retrieved successfully
@@ -342,12 +344,14 @@ paths:
           type: integer
           minimum: 1
           maximum: 100
-          default: 10
-      - name: cursor
+          default: 20
+      - name: page
         in: query
-        description: Pagination cursor
+        description: Pagination page number
         schema:
-          type: string
+          type: integer
+          minimum: 1
+          default: 1
       - name: type
         in: query
         description: Filter by transaction type
@@ -679,16 +683,18 @@ components:
     Pagination:
       type: object
       properties:
+        page:
+          type: integer
+          example: 1
         limit:
           type: integer
-          example: 10
-        cursor:
-          type: string
-          nullable: true
-          example: eyJpZCI6MTB9
-        has_more:
-          type: boolean
-          example: true
+          example: 20
+        total:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 5
     HealthResponse:
       type: object
       properties:

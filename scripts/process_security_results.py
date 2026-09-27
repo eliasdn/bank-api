@@ -92,13 +92,15 @@ def parse_govulncheck(govulncheck_file):
             pass
 
     if not vuln_entries and content.strip():
-        matches = re.findall(r'(GO-\d{4}-\d+)', content)
-        for osv_id in set(matches):
-            vuln_entries.append({
-                "id": osv_id,
-                "pkg": "dependencies",
-                "details": f"Govulncheck detected vulnerability {osv_id}"
-            })
+        # Do not extract vulnerability IDs if govulncheck indicates 0 vulnerabilities affect the code
+        if "Your code is affected by 0 vulnerabilities" not in content and "No vulnerabilities found." not in content:
+            matches = re.findall(r'Vulnerability\s+#\d+:\s+(GO-\d{4}-\d+)', content) or re.findall(r'(GO-\d{4}-\d+)', content)
+            for osv_id in set(matches):
+                vuln_entries.append({
+                    "id": osv_id,
+                    "pkg": "dependencies",
+                    "details": f"Govulncheck detected vulnerability {osv_id}"
+                })
 
     for item in vuln_entries:
         group_key = f"GOVULN-{item['id']}"

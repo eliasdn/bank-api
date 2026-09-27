@@ -94,6 +94,10 @@ tmp/
 # Node modules (if any frontend tools are used)
 node_modules/
 
+# Python cache files
+__pycache__/
+*.pyc
+
 # Local development
 .dev/
 .local/

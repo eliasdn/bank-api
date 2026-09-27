@@ -28,7 +28,7 @@ func (m *ErrorLogger) LogErrors() gin.HandlerFunc {
 		// Generate or get request ID
 		requestID := c.GetString("X-Request-ID")
 		if requestID == "" {
-			requestID = uuid.New().String()
+			requestID = uuid.NewString()
 			c.Set("X-Request-ID", requestID)
 		}
 

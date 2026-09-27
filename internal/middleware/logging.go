@@ -42,7 +42,7 @@ func (rl *RequestLogger) LoggingMiddleware() gin.HandlerFunc {
 		// Generate or extract request ID
 		requestID := c.GetHeader("X-Request-ID")
 		if requestID == "" {
-			requestID = uuid.New().String()
+			requestID = uuid.NewString()
 		}
 
 		// Set request ID in context

@@ -66,52 +66,79 @@ def parse_govulncheck(govulncheck_file):
         print(f"Govulncheck file {govulncheck_file} not found.")
         return {}
 
-    grouped = {}
     with open(govulncheck_file, 'r') as f:
         content = f.read()
 
-    lines = content.splitlines()
-    vuln_entries = []
+    if not content.strip():
+        return {}
 
-    for line in lines:
-        if not line.strip():
-            continue
+    # Skip any non-JSON prefix text (e.g., download / build messages)
+    start = content.find("{")
+    if start != -1:
+        content = content[start:]
+
+    decoder = json.JSONDecoder()
+    idx = 0
+    entries = []
+    while idx < len(content):
+        content_str = content[idx:].lstrip()
+        if not content_str:
+            break
         try:
-            entry = json.loads(line)
-            if "finding" in entry:
-                finding = entry["finding"]
-                osv_id = finding.get("osv", "UNKNOWN")
-                trace = finding.get("trace", [])
-                pkg = trace[0].get("module", "unknown") if trace else "unknown"
-                vuln_entries.append({
-                    "id": osv_id,
-                    "pkg": pkg,
-                    "details": f"Vulnerability {osv_id} found in package {pkg}"
-                })
-        except json.JSONDecodeError:
-            pass
+            obj, end = decoder.raw_decode(content_str)
+            entries.append(obj)
+            idx += len(content[idx:]) - len(content_str) + end
+        except Exception:
+            idx += 1
 
-    if not vuln_entries and content.strip():
-        matches = re.findall(r'(GO-\d{4}-\d+)', content)
-        for osv_id in set(matches):
-            vuln_entries.append({
-                "id": osv_id,
-                "pkg": "dependencies",
-                "details": f"Govulncheck detected vulnerability {osv_id}"
-            })
+    osv_map = {}
+    for entry in entries:
+        if "osv" in entry and isinstance(entry["osv"], dict):
+            osv_obj = entry["osv"]
+            if "id" in osv_obj:
+                osv_map[osv_obj["id"]] = osv_obj
 
-    for item in vuln_entries:
-        group_key = f"GOVULN-{item['id']}"
+    # Check text fallback outputs if present
+    if ("Your code is affected by 0 vulnerabilities." in content or
+            "No vulnerabilities found." in content):
+        return {}
+
+    # Check if there are any findings with call traces (length > 1 or containing package/function)
+    # Findings with trace length 1 only indicate required/imported modules not called by user code.
+    called_findings = []
+    for entry in entries:
+        if "finding" in entry and isinstance(entry["finding"], dict):
+            finding = entry["finding"]
+            trace = finding.get("trace", [])
+            # A trace indicating an actual call or package import affecting user code
+            # has trace elements for package/symbol level or length > 1.
+            if trace and (len(trace) > 1 or any("package" in t or "function" in t for t in trace if isinstance(t, dict))):
+                called_findings.append(finding)
+
+    if not called_findings:
+        return {}
+
+    grouped = {}
+    for finding in called_findings:
+        osv_id = finding.get("osv", "UNKNOWN")
+        trace = finding.get("trace", [])
+        pkg = trace[0].get("module", "unknown") if isinstance(trace[0], dict) else "unknown"
+
+        osv_info = osv_map.get(osv_id, {})
+        summary = osv_info.get("summary", f"Vulnerability {osv_id} found in package {pkg}")
+        details = osv_info.get("details", summary)
+
+        group_key = f"GOVULN-{osv_id}"
         if group_key not in grouped:
             grouped[group_key] = {
                 "id": group_key,
                 "type": "govulncheck",
-                "rule_id": item['id'],
-                "title": f"Govulncheck {item['id']}: Vulnerability in {item['pkg']}",
+                "rule_id": osv_id,
+                "title": f"Govulncheck {osv_id}: {summary}",
                 "severity": "HIGH",
                 "confidence": "HIGH",
-                "details": item['details'],
-                "occurrences": [{"file": "go.mod / dependencies", "line": "-", "code": item['pkg']}]
+                "details": details,
+                "occurrences": [{"file": "go.mod / dependencies", "line": "-", "code": pkg}]
             }
 
     return grouped

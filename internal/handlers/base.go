@@ -3,6 +3,7 @@ package handlers
 import (
 	"bank-api/internal/config"
 	"bank-api/internal/db"
+	"bank-api/internal/models"
 	"bank-api/internal/services"
 	"golang.org/x/crypto/bcrypt"
 	"sync"
@@ -12,6 +13,7 @@ type Handler struct {
 	DB                db.DBInterface
 	Config            *config.AppConfig
 	AuditService      *services.AuditService
+	LimitService      *models.TransactionLimitService
 	dummyHash         string
 	TxCountCache      sync.Map
 	AccountCountCache sync.Map
@@ -26,6 +28,7 @@ func NewHandler(db db.DBInterface, cfg *config.AppConfig) *Handler {
 		DB:                db,
 		Config:            cfg,
 		AuditService:      services.NewAuditService(db.GetDB()),
+		LimitService:      models.NewTransactionLimitService(db.GetDB()),
 		dummyHash:         string(dummyHash),
 		TxCountCache:      sync.Map{},
 		AccountCountCache: sync.Map{},

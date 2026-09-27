@@ -43,6 +43,11 @@ func (h *Handler) Deposit(c *gin.Context) {
 		return
 	}
 
+	if err := h.LimitService.CheckLimit(account.ID, deposit.Amount, "deposit"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Start transaction
 	tx := h.DB.Begin()
 	defer func() {
@@ -82,6 +87,12 @@ func (h *Handler) Deposit(c *gin.Context) {
 	if err := tx.Commit().Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "transaction failed"})
 		return
+	}
+
+	// Record transaction limits
+	if err := h.LimitService.RecordTransaction(account.ID, transaction.ID, deposit.Amount, "deposit"); err != nil {
+		// Log error but don't fail the transaction since it's already committed
+		c.Error(err)
 	}
 
 	// Invalidate cache
@@ -130,6 +141,11 @@ func (h *Handler) Withdraw(c *gin.Context) {
 
 	validator := validation.New()
 	if err := validator.ValidateAmount(withdrawal.Amount); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.LimitService.CheckLimit(account.ID, withdrawal.Amount, "withdrawal"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -186,6 +202,11 @@ func (h *Handler) Withdraw(c *gin.Context) {
 		return
 	}
 
+	// Record transaction limits
+	if err := h.LimitService.RecordTransaction(account.ID, transaction.ID, withdrawal.Amount, "withdrawal"); err != nil {
+		c.Error(err)
+	}
+
 	// Invalidate cache
 	h.TxCountCache.Delete(account.ID)
 
@@ -232,6 +253,11 @@ func (h *Handler) Transfer(c *gin.Context) {
 
 	validator := validation.New()
 	if err := validator.ValidateTransfer(fromAccount.ID, transfer.ToAccountID, transfer.Amount, transfer.Description); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.LimitService.CheckLimit(fromAccount.ID, transfer.Amount, "transfer"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -321,6 +347,11 @@ func (h *Handler) Transfer(c *gin.Context) {
 		return
 	}
 
+	// Record transaction limits
+	if err := h.LimitService.RecordTransaction(fromAccount.ID, outgoingTx.ID, transfer.Amount, "transfer"); err != nil {
+		c.Error(err)
+	}
+
 	// Invalidate cache for both accounts
 	h.TxCountCache.Delete(fromAccount.ID)
 	h.TxCountCache.Delete(toAccount.ID)
@@ -399,7 +430,8 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 
 	// Convert to DTOs
 	transactionDTOs := make([]dto.TransactionResponse, len(transactions))
-	for i, t := range transactions {
+	for i := range transactions {
+		t := &transactions[i]
 		transactionDTOs[i] = dto.TransactionResponse{
 			ID:              t.ID,
 			AccountID:       t.AccountID,

@@ -137,3 +137,12 @@
 ## 2026-09-25 - Optimize String Building with Numbers
 **Learning:** For building complex strings that contain formatted numbers in hot execution paths, using a pre-allocated byte slice and `strconv.AppendFloat` avoids the intermediate heap allocations inherent to native string concatenation combined with `strconv.FormatFloat`.
 **Action:** To reduce intermediate heap allocations when building strings containing formatted numbers in hot paths, use a pre-allocated byte slice (`make([]byte, 0, capacity)`) and append functions like `strconv.AppendFloat` rather than native string concatenation with `strconv.FormatFloat`.
+## 2026-09-25 - [Optimize Struct Iteration Overhead in Loops]
+**Learning:** Iterating over a slice of structs using value semantics (`for i, val := range slice`) causes the Go runtime to copy the entire struct into the `val` variable on every iteration. For large structs like database models, this memory copying adds unnecessary overhead, particularly in hot paths or with large data sets (e.g., retrieving paginated transactions).
+**Action:** When iterating over a slice of structs, always use index semantics (`for i := range slice`) and access the struct via a pointer `&slice[i]` or directly by index `slice[i]`. This completely avoids the struct copying overhead and improves performance.
+## 2026-09-26 - [Optimize UUID generation]
+**Learning:** Generating a UUID and converting it to a string using `uuid.New().String()` creates an intermediate `uuid.UUID` array (16 bytes) and then calls its `.String()` method, causing overhead. The google/uuid library provides `uuid.NewString()` which is optimized to do this directly, reducing execution time.
+**Action:** When only the string representation of a random UUID is needed, prefer using `uuid.NewString()` over `uuid.New().String()` to optimize hot paths.
+## 2026-09-27 - Performance Optimization: Float formatting in hot paths
+**Learning**: In `internal/audit/audit.go`, string formatting for transaction amounts used `strconv.FormatFloat`. For specific fixed-precision financial formats (like exactly 2 decimal places for cents), a custom manual byte loop avoids standard library overhead.
+**Action**: Replaced `strconv.FormatFloat(amount, 'f', 2, 64)` with a highly optimized `validation.FormatFloatAmount` function to format `float64` values into strings faster in hot paths.

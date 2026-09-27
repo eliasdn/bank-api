@@ -33,6 +33,12 @@ func CORSMiddleware(cfg *config.AppConfig) gin.HandlerFunc {
 	}
 
 	corsConfig.AllowCredentials = cfg.CORS.AllowCredentials
+
+	// Ensure AllowCredentials is not true if AllowAllOrigins is true (violates W3C CORS spec and causes panic)
+	if corsConfig.AllowAllOrigins {
+		corsConfig.AllowCredentials = false
+	}
+
 	corsConfig.MaxAge = cfg.CORS.MaxAge
 
 	return cors.New(corsConfig)

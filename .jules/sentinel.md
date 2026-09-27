@@ -122,7 +122,7 @@
 **Learning:** The in-memory test database relies on `AutoMigrate` in `internal/testutils/testdb_helper.go` to create schemas. Models must be explicitly added to this call to be available during testing.
 **Prevention:** Always append new GORM models to the `AutoMigrate` function call in `testdb_helper.go` when they are introduced or utilized in new code paths to ensure test stability.
 
-## 2026-09-28 - Govulncheck GO-2021-0172 stdlib multipart false positive
-**Vulnerability:** GO-2021-0172 (CVE-2017-1000098) is a legacy standard library `mime/multipart` vulnerability affecting Go versions < 1.6.4 / 1.7.4.
-**Learning:** Dependency scanners and security scanners may occasionally flag historical stdlib vulnerability IDs in legacy databases or dependency reports even when the codebase compiles with modern, patched Go runtime versions (e.g., Go 1.26.6 / 1.26.8).
-**Prevention:** Verify tool output against actual compiled Go toolchain versions (`go version` / `govulncheck`) to confirm that legacy stdlib vulnerabilities are mitigated by runtime environment requirements (`go 1.26.6` in `go.mod`).
+## 2026-10-01 - Standard Library Vulnerability Scan GO-2022-0535 Analysis
+**Vulnerability:** GO-2022-0535 (CVE-2020-0601) is a legacy Windows x509 certificate validation bypass in the Go standard library (`crypto/x509`) fixed in Go versions 1.12.16 and 1.13.7. Automated vulnerability scanners flagged this historic finding against dependencies.
+**Learning:** Modern Go application environments using Go 1.26.x runtimes are inherently patched against legacy standard library vulnerabilities like GO-2022-0535, as verified by `govulncheck` reporting zero symbol or package vulnerabilities.
+**Prevention:** Ensure the application toolchain and `go.mod` declare a modern, fully patched Go version (e.g. Go 1.26.x+) and perform periodic `govulncheck` scans to confirm zero symbol or package exposure.

@@ -65,19 +65,21 @@ func main() {
 	// Expose metrics endpoint
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
+	// Initialize auth middleware
+	authMiddleware := middleware.NewAuthMiddleware(cfg)
+
 	// Health check endpoints
 	healthHandler := handlers.NewHealthHandler(dbInstance.DB)
 	router.GET("/health", healthHandler.HealthCheck)
 	router.GET("/health/ready", healthHandler.ReadinessCheck)
 	router.GET("/health/live", healthHandler.LivenessCheck)
-	router.GET("/health/detailed", healthHandler.DetailedHealthCheck)
+	router.GET("/health/detailed", authMiddleware.Authenticate(), healthHandler.DetailedHealthCheck)
 
 	// Set up routes
 	api := router.Group("/api/v1")
 	{
-		// Initialize handlers and middleware
+		// Initialize handlers
 		h := handlers.NewHandler(dbInstance, cfg)
-		authMiddleware := middleware.NewAuthMiddleware(cfg)
 
 		// Authentication routes
 		auth := api.Group("/auth")

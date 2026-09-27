@@ -26,6 +26,8 @@ func InitTestDB() *gorm.DB {
 		&models.Account{},
 		&models.Transaction{},
 		&audit.AuditLog{},
+		&models.TransactionLimit{},
+		&models.TransactionUsage{},
 	); err != nil {
 		panic("failed to auto migrate: " + err.Error())
 	}

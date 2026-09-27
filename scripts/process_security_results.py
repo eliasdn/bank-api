@@ -98,30 +98,48 @@ def parse_govulncheck(govulncheck_file):
             if "id" in osv_obj:
                 osv_map[osv_obj["id"]] = osv_obj
 
-    grouped = {}
+    # Check text fallback outputs if present
+    if ("Your code is affected by 0 vulnerabilities." in content or
+            "No vulnerabilities found." in content):
+        return {}
+
+    # Check if there are any findings with call traces (length > 1 or containing package/function)
+    # Findings with trace length 1 only indicate required/imported modules not called by user code.
+    called_findings = []
     for entry in entries:
         if "finding" in entry and isinstance(entry["finding"], dict):
             finding = entry["finding"]
-            osv_id = finding.get("osv", "UNKNOWN")
             trace = finding.get("trace", [])
-            pkg = trace[0].get("module", "unknown") if trace and isinstance(trace[0], dict) else "unknown"
+            # A trace indicating an actual call or package import affecting user code
+            # has trace elements for package/symbol level or length > 1.
+            if trace and (len(trace) > 1 or any("package" in t or "function" in t for t in trace if isinstance(t, dict))):
+                called_findings.append(finding)
 
-            osv_info = osv_map.get(osv_id, {})
-            summary = osv_info.get("summary", f"Vulnerability {osv_id} found in package {pkg}")
-            details = osv_info.get("details", summary)
+    if not called_findings:
+        return {}
 
-            group_key = f"GOVULN-{osv_id}"
-            if group_key not in grouped:
-                grouped[group_key] = {
-                    "id": group_key,
-                    "type": "govulncheck",
-                    "rule_id": osv_id,
-                    "title": f"Govulncheck {osv_id}: {summary}",
-                    "severity": "HIGH",
-                    "confidence": "HIGH",
-                    "details": details,
-                    "occurrences": [{"file": "go.mod / dependencies", "line": "-", "code": pkg}]
-                }
+    grouped = {}
+    for finding in called_findings:
+        osv_id = finding.get("osv", "UNKNOWN")
+        trace = finding.get("trace", [])
+        pkg = trace[0].get("module", "unknown") if isinstance(trace[0], dict) else "unknown"
+
+        osv_info = osv_map.get(osv_id, {})
+        summary = osv_info.get("summary", f"Vulnerability {osv_id} found in package {pkg}")
+        details = osv_info.get("details", summary)
+
+        group_key = f"GOVULN-{osv_id}"
+        if group_key not in grouped:
+            grouped[group_key] = {
+                "id": group_key,
+                "type": "govulncheck",
+                "rule_id": osv_id,
+                "title": f"Govulncheck {osv_id}: {summary}",
+                "severity": "HIGH",
+                "confidence": "HIGH",
+                "details": details,
+                "occurrences": [{"file": "go.mod / dependencies", "line": "-", "code": pkg}]
+            }
 
     return grouped
 

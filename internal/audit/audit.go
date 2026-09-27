@@ -76,7 +76,14 @@ type txLog struct {
 
 // LogTransaction logs a financial transaction
 func (l *DatabaseAuditLogger) LogTransaction(userID uint, transaction *models.Transaction, account *models.Account, ipAddress, userAgent string) error {
-	description := transaction.TransactionType + " of " + validation.FormatFloatAmount(transaction.Amount) + " on account " + account.AccountNumber
+	// Pre-allocate buffer to avoid intermediate string allocations during concatenation
+	descBuf := make([]byte, 0, len(transaction.TransactionType)+4+15+12+len(account.AccountNumber))
+	descBuf = append(descBuf, transaction.TransactionType...)
+	descBuf = append(descBuf, " of "...)
+	descBuf = strconv.AppendFloat(descBuf, transaction.Amount, 'f', 2, 64)
+	descBuf = append(descBuf, " on account "...)
+	descBuf = append(descBuf, account.AccountNumber...)
+	description := string(descBuf)
 
 	transactionJSON, _ := json.Marshal(txLog{
 		TransactionID: transaction.ID,

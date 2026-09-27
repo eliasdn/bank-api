@@ -430,7 +430,8 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 
 	// Convert to DTOs
 	transactionDTOs := make([]dto.TransactionResponse, len(transactions))
-	for i, t := range transactions {
+	for i := range transactions {
+		t := &transactions[i]
 		transactionDTOs[i] = dto.TransactionResponse{
 			ID:              t.ID,
 			AccountID:       t.AccountID,

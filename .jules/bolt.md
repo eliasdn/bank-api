@@ -130,6 +130,9 @@
 ## 2026-09-24 - [Skip empty DB queries on out-of-bounds pagination]
 **Learning:** When retrieving paginated data, if the requested offset (derived from page and limit) is greater than or equal to the total number of records, querying the database will yield zero results. Proceeding with a paginated `Find` query in this state introduces unnecessary database network I/O and query execution overhead.
 **Action:** Always check `if int64(offset) < total` before executing the data fetch query when the total count is already available (especially when cached). If the offset is out-of-bounds, skip the query and return an empty list directly.
+## 2026-09-25 - [Optimize Struct Iteration Overhead in Loops]
+**Learning:** Iterating over a slice of structs using value semantics (`for i, val := range slice`) causes the Go runtime to copy the entire struct into the `val` variable on every iteration. For large structs like database models, this memory copying adds unnecessary overhead, particularly in hot paths or with large data sets (e.g., retrieving paginated transactions).
+**Action:** When iterating over a slice of structs, always use index semantics (`for i := range slice`) and access the struct via a pointer `&slice[i]` or directly by index `slice[i]`. This completely avoids the struct copying overhead and improves performance.
 ## 2026-09-26 - [Optimize UUID generation]
 **Learning:** Generating a UUID and converting it to a string using `uuid.New().String()` creates an intermediate `uuid.UUID` array (16 bytes) and then calls its `.String()` method, causing overhead. The google/uuid library provides `uuid.NewString()` which is optimized to do this directly, reducing execution time.
 **Action:** When only the string representation of a random UUID is needed, prefer using `uuid.NewString()` over `uuid.New().String()` to optimize hot paths.

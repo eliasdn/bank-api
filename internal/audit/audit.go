@@ -5,7 +5,6 @@ import (
 	"bank-api/internal/validation"
 	"encoding/json"
 	"log"
-	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -77,7 +76,7 @@ type txLog struct {
 
 // LogTransaction logs a financial transaction
 func (l *DatabaseAuditLogger) LogTransaction(userID uint, transaction *models.Transaction, account *models.Account, ipAddress, userAgent string) error {
-	description := transaction.TransactionType + " of " + strconv.FormatFloat(transaction.Amount, 'f', 2, 64) + " on account " + account.AccountNumber
+	description := transaction.TransactionType + " of " + validation.FormatFloatAmount(transaction.Amount) + " on account " + account.AccountNumber
 
 	transactionJSON, _ := json.Marshal(txLog{
 		TransactionID: transaction.ID,

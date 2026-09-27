@@ -130,3 +130,6 @@
 ## 2026-09-24 - [Skip empty DB queries on out-of-bounds pagination]
 **Learning:** When retrieving paginated data, if the requested offset (derived from page and limit) is greater than or equal to the total number of records, querying the database will yield zero results. Proceeding with a paginated `Find` query in this state introduces unnecessary database network I/O and query execution overhead.
 **Action:** Always check `if int64(offset) < total` before executing the data fetch query when the total count is already available (especially when cached). If the offset is out-of-bounds, skip the query and return an empty list directly.
+## 2026-09-27 - Performance Optimization: Float formatting in hot paths
+**Learning**: In `internal/audit/audit.go`, string formatting for transaction amounts used `strconv.FormatFloat`. For specific fixed-precision financial formats (like exactly 2 decimal places for cents), a custom manual byte loop avoids standard library overhead.
+**Action**: Replaced `strconv.FormatFloat(amount, 'f', 2, 64)` with a highly optimized `validation.FormatFloatAmount` function to format `float64` values into strings faster in hot paths.

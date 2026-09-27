@@ -107,3 +107,17 @@
 **Vulnerability:** Static Application Security Testing (SAST) tools like `gosec` frequently flag dummy password hashes (e.g., bcrypt hashes) used in test fixture data as hardcoded credentials (rule G101).
 **Learning:** While hardcoded credentials in production code are a critical vulnerability, dummy hashes in test files are false positives. Leaving them unaddressed can cause alert fatigue and obscure real vulnerabilities in automated security scans.
 **Prevention:** Always use explicit suppression comments (e.g., `// #nosec G101`) to acknowledge and ignore false positives in test data, ensuring security scan results remain actionable and relevant.
+## 2026-09-27 - Transaction Limits Bypass
+**Vulnerability:** The application included a `TransactionLimitService` designed to enforce constraints on transaction amounts, velocity, and daily/monthly limits. However, this service was completely bypassed in the transaction handlers (`internal/handlers/transactions.go`) for `Deposit`, `Withdraw`, and `Transfer`, allowing attackers to bypass financial transfer restrictions.
+**Learning:** Security controls implemented in separate service layers are ineffective if they are not explicitly wired into the core execution paths (handlers).
+**Prevention:** Ensure that all intended security and business logic controls, such as rate limits and transaction limits, are actively invoked and enforced within the corresponding API handlers. Always verify that new security services are not just implemented but actually integrated.
+
+## 2026-09-27 - Information Disclosure via /health/detailed Endpoint
+**Vulnerability:** The `/health/detailed` endpoint in `internal/handlers/health.go` currently lacks authentication and exposes sensitive environment and database information, presenting a potential information disclosure vulnerability.
+**Learning:** Endpoints providing detailed system, environment, or dependency information can aid attackers in reconnaissance and must be protected.
+**Prevention:** Ensure that endpoints exposing detailed system health or configuration data require authentication and are restricted to administrative or monitoring roles.
+
+## 2026-09-27 - Missing AutoMigrate for New Models in Tests
+**Vulnerability:** When utilizing a new GORM model (like `TransactionLimit`) that wasn't previously queried in a specific test path, the tests failed with 'no such table' errors.
+**Learning:** The in-memory test database relies on `AutoMigrate` in `internal/testutils/testdb_helper.go` to create schemas. Models must be explicitly added to this call to be available during testing.
+**Prevention:** Always append new GORM models to the `AutoMigrate` function call in `testdb_helper.go` when they are introduced or utilized in new code paths to ensure test stability.

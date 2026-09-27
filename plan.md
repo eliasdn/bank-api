@@ -1,20 +1,9 @@
-1. **Add `uint_conversions.go` to `internal/validation`:**
-   - Create highly optimized manual byte loop functions for `FormatUint(u uint64) string` and `ParseUint(s string, def uint64) (uint64, error)`.
-   - These functions avoid generalized reflection/interface overhead of the `strconv` package, making them significantly faster in hot paths.
-2. **Replace `strconv.FormatUint` usage:**
-   - Update `internal/services/audit_service.go`
-   - Update `internal/middleware/rate_limiter.go`
-   - Update `internal/middleware/logging.go`
-   - Update `internal/audit/audit.go`
-   - Replace `strconv.FormatUint(uint64(id), 10)` with `validation.FormatUint(uint64(id))` in these files.
-3. **Replace `strconv.ParseUint` usage:**
-   - Update `internal/handlers/users.go`
-   - Update `internal/middleware/auth.go`
-   - Replace `strconv.ParseUint(idStr, 10, 64)` with `validation.ParseUint(idStr, 0)` in these files.
-4. **Update tests and run verifications:**
-   - Add unit/benchmark tests for the new conversion functions in `internal/validation/uint_conversions_test.go`.
-   - Run `go test ./...` and `go build ./...` to verify everything compiles and passes.
-5. **Complete pre commit steps**
-   - Ensure proper testing, verification, review, and reflection are done by calling `pre_commit_instructions`.
-6. **Submit PR:**
-   - Submit the PR with the performance improvements.
+1. **Optimize struct iteration overhead by using range over index instead of values.**
+   - In `internal/handlers/transactions.go` (`GetTransactions` handler), a slice of `models.Transaction` structs is iterated over using `for i, t := range transactions`. This copies the large `models.Transaction` struct on every iteration.
+   - We will replace it with `for i := range transactions` and access elements by index `t := &transactions[i]` (or simply access `transactions[i]`) to avoid copying the struct on every iteration.
+2. **Execute tests and benchmarks.**
+   - Run `go test ./...` and ensure all tests pass.
+3. **Log the finding to `.jules/bolt.md`.**
+   - Add a journal entry explaining the optimization, specifically mentioning avoiding struct copying overhead when ranging over large structs.
+4. **Complete Pre-commit and submit.**
+   - Execute required pre commit instructions, make sure verification, review and reflections are complete, and then push/submit the pull request.

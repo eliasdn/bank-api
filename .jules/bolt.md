@@ -130,3 +130,10 @@
 ## 2026-09-24 - [Skip empty DB queries on out-of-bounds pagination]
 **Learning:** When retrieving paginated data, if the requested offset (derived from page and limit) is greater than or equal to the total number of records, querying the database will yield zero results. Proceeding with a paginated `Find` query in this state introduces unnecessary database network I/O and query execution overhead.
 **Action:** Always check `if int64(offset) < total` before executing the data fetch query when the total count is already available (especially when cached). If the offset is out-of-bounds, skip the query and return an empty list directly.
+## 2026-09-25 - Avoid Anti-Pattern Micro-Optimizations
+**Learning:** Micro-optimizations that sacrifice code readability for negligible sub-nanosecond gains (e.g., replacing standard `math.Round` and `math.Abs` with manual float-to-integer casting logic for basic validation) are considered anti-patterns and will be rejected.
+**Action:** When searching for performance improvements, prioritize optimizations that yield measurable impact (e.g. >10% execution time reduction on hot paths) and do not significantly degrade code readability.
+
+## 2026-09-25 - Optimize String Building with Numbers
+**Learning:** For building complex strings that contain formatted numbers in hot execution paths, using a pre-allocated byte slice and `strconv.AppendFloat` avoids the intermediate heap allocations inherent to native string concatenation combined with `strconv.FormatFloat`.
+**Action:** To reduce intermediate heap allocations when building strings containing formatted numbers in hot paths, use a pre-allocated byte slice (`make([]byte, 0, capacity)`) and append functions like `strconv.AppendFloat` rather than native string concatenation with `strconv.FormatFloat`.

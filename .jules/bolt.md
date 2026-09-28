@@ -146,3 +146,6 @@
 ## 2026-09-27 - Performance Optimization: Float formatting in hot paths
 **Learning**: In `internal/audit/audit.go`, string formatting for transaction amounts used `strconv.FormatFloat`. For specific fixed-precision financial formats (like exactly 2 decimal places for cents), a custom manual byte loop avoids standard library overhead.
 **Action**: Replaced `strconv.FormatFloat(amount, 'f', 2, 64)` with a highly optimized `validation.FormatFloatAmount` function to format `float64` values into strings faster in hot paths.
+## 2026-09-27 - Optimize float parsing in string builder
+**Learning:** In `internal/audit/audit.go`, building strings containing formatted numbers in hot paths using `strconv.AppendFloat` invokes the general-purpose floating-point formatting logic of standard library. Using a highly optimized, fixed-precision manual byte loop `validation.FormatFloatAmount` function and appending it to a pre-allocated byte slice using standard `append` drastically reduces function call overhead and execution time.
+**Action:** When appending fixed-precision floats to byte slices in hot paths, avoid `strconv.AppendFloat` in favor of customized `validation.FormatFloatAmount` via standard `append` to eliminate library overhead.

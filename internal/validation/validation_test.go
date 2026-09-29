@@ -52,6 +52,9 @@ func TestValidateEmail(t *testing.T) {
 		{"invalid format - no @", "johndoe.com", true},
 		{"invalid format - no domain", "john@", true},
 		{"invalid format - no tld", "john@doe", true},
+		{"email with null byte", "john\x00.doe@example.com", true},
+		{"email with newline", "john\n.doe@example.com", true},
+		{"email with carriage return", "john\r.doe@example.com", true},
 	}
 
 	for _, tt := range tests {

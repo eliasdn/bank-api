@@ -60,13 +60,20 @@ func (v *Validator) ValidateUsername(username string) error {
 	return nil
 }
 
-// ValidateEmail validates email format
+// ValidateEmail validates email format and rejects null bytes and line breaks to prevent CRLF/null-byte injection
 func (v *Validator) ValidateEmail(email string) error {
 	// Optimization: strings.TrimSpace only creates a slice header (no allocation).
 	// Avoid strings.ToLower since the manual byte loop below checks both cases.
 	email = strings.TrimSpace(email)
 	if len(email) < MinEmailLength || len(email) > MaxEmailLength {
 		return errors.NewValidationError("email must be between %d and %d characters", MinEmailLength, MaxEmailLength)
+	}
+
+	for i := 0; i < len(email); i++ {
+		c := email[i]
+		if c == 0 || c == '\r' || c == '\n' {
+			return errors.NewValidationError("email cannot contain null bytes or line breaks")
+		}
 	}
 
 	// Fast path manual email validation

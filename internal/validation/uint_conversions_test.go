@@ -126,3 +126,39 @@ func TestFormatFloatAmountNegative(t *testing.T) {
 		t.Errorf("FormatFloatAmount(%v) = %v, want %v", amount, got, want)
 	}
 }
+
+func TestAppendFloatAmount(t *testing.T) {
+	tests := []struct {
+		amount float64
+		want   string
+	}{
+		{0.00, "0.00"},
+		{0.01, "0.01"},
+		{0.10, "0.10"},
+		{1.00, "1.00"},
+		{1.23, "1.23"},
+		{12.34, "12.34"},
+		{123.45, "123.45"},
+		{1234.56, "1234.56"},
+		{12345.67, "12345.67"},
+		{-1234.56, "-1234.56"},
+	}
+
+	for _, tt := range tests {
+		t.Run(strconv.FormatFloat(tt.amount, 'f', 2, 64), func(t *testing.T) {
+			b := make([]byte, 0, 24)
+			got := string(AppendFloatAmount(b, tt.amount))
+			if got != tt.want {
+				t.Errorf("AppendFloatAmount(%v) = %v, want %v", tt.amount, got, tt.want)
+			}
+		})
+	}
+}
+
+func BenchmarkAppendFloatAmount(b *testing.B) {
+	amount := 1234.56
+	buf := make([]byte, 0, 64)
+	for i := 0; i < b.N; i++ {
+		_ = AppendFloatAmount(buf[:0], amount)
+	}
+}

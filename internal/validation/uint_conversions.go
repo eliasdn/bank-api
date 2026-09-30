@@ -91,3 +91,45 @@ func FormatFloatAmount(amount float64) string {
 	}
 	return string(b[i:])
 }
+
+// AppendFloatAmount is a highly optimized manual byte loop for appending positive float64 amounts to 2 decimal places to a byte slice.
+// It avoids function call overhead and string allocation overhead compared to formatting monetary amounts and appending them.
+func AppendFloatAmount(dst []byte, amount float64) []byte {
+	isNegative := amount < 0
+	if isNegative {
+		amount = -amount
+	}
+	cents := uint64(amount*100 + 0.5)
+	if cents == 0 {
+		return append(dst, "0.00"...)
+	}
+	var b [24]byte
+	i := 24
+	for cents >= 10 {
+		q := cents / 10
+		i--
+		b[i] = byte('0' + (cents - q*10)) // #nosec G115
+		cents = q
+		if i == 22 {
+			i--
+			b[i] = '.'
+		}
+	}
+	i--
+	b[i] = byte('0' + cents) // #nosec G115
+	if i == 22 {
+		i -= 2
+		b[i] = '0'
+		b[i+1] = '.'
+	} else if i == 23 {
+		i -= 3
+		b[i] = '0'
+		b[i+1] = '.'
+		b[i+2] = '0'
+	}
+	if isNegative {
+		i--
+		b[i] = '-'
+	}
+	return append(dst, b[i:]...)
+}

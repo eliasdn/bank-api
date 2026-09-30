@@ -586,7 +586,7 @@ components:
           example: johndoe
         email:
           type: string
-          maxLength: 255
+          maxLength: 100
           example: john.doe@example.com
         full_name:
           type: string
@@ -736,7 +736,7 @@ components:
         email:
           type: string
           format: email
-          maxLength: 255
+          maxLength: 100
           example: john.doe@example.com
     SuccessMessageResponse:
       type: object

@@ -80,7 +80,7 @@ func (l *DatabaseAuditLogger) LogTransaction(userID uint, transaction *models.Tr
 	descBuf := make([]byte, 0, len(transaction.TransactionType)+4+15+12+len(account.AccountNumber))
 	descBuf = append(descBuf, transaction.TransactionType...)
 	descBuf = append(descBuf, " of "...)
-	descBuf = append(descBuf, validation.FormatFloatAmount(transaction.Amount)...)
+	descBuf = validation.AppendFloatAmount(descBuf, transaction.Amount)
 	descBuf = append(descBuf, " on account "...)
 	descBuf = append(descBuf, account.AccountNumber...)
 	description := string(descBuf)

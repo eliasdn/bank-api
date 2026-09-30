@@ -1,11 +1,10 @@
-## 2026-09-19 - [Optimize fmt.Sprintf in error formatting]
-**Learning:** `fmt.Sprintf` incurs a heavy reflection overhead (~92ns per op) even when no formatting arguments are provided. Creating validation errors that only return static strings happens very frequently in the validation layer.
-**Action:** When writing error constructors like `NewValidationError(format string, args ...interface{})`, always add a fast path (`if len(args) == 0`) that assigns the static string directly without calling `fmt.Sprintf`. This reduces the instantiation time to sub-nanosecond levels (~0.3ns).
-## 2024-05-22 - [Database Indexing Strategy]
-**Learning:** SQLite supports `DESC` in index definitions, which is crucial for pagination queries that use `ORDER BY created_at DESC`. Without the `DESC` in the index, the database might still need to perform a sort operation or scan the index backwards (which is fast but explicit direction is better).
-**Action:** When optimizing "latest items" lists, always prefer composite indexes `(foreign_key, sort_column DESC)` over simple foreign key indexes.
-## Repeated Random Seeding Optimization
+## 2026-09-27 - Optimize Float Formatting in Audit Logs
+**Learning:** For building complex strings that contain formatted numbers in hot execution paths, using `strconv.AppendFloat` allocates and formats the float directly into a byte slice. However, for fixed-precision monetary amounts, using a highly specialized, integer-arithmetic-based custom function (like `validation.AppendFloatAmount`) that appends to a pre-allocated buffer is even faster and completely avoids allocations from the standard library.
+**Action:** When appending fixed-precision floats (e.g. monetary amounts) to a pre-allocated byte slice in a hot path, replace standard library tools like `strconv.AppendFloat` with an optimized custom function (like `validation.AppendFloatAmount`) that handles integer arithmetic directly without heap allocations.
 
+## 2026-09-28 - Optimize Float Formatting in Audit Logs
+**Learning:** For building complex strings that contain formatted numbers in hot execution paths, using `strconv.AppendFloat` allocates and formats the float directly into a byte slice. However, for fixed-precision monetary amounts, using a highly specialized, integer-arithmetic-based custom function (like `validation.AppendFloatAmount`) that appends to a pre-allocated buffer is even faster and completely avoids allocations from the standard library.
+**Action:** When appending fixed-precision floats (e.g. monetary amounts) to a pre-allocated byte slice in a hot path, replace standard library tools like `strconv.AppendFloat` with an optimized custom function (like `validation.AppendFloatAmount`) that handles integer arithmetic directly without heap allocations.
 **Optimization**: Extracted `rand.Seed(time.Now().UnixNano())` out of `generateAccountNumber` into an `init()` function.
 **Rationale**: Repeatedly seeding `math/rand` on every function call generates overhead and causes lock contention in highly concurrent environments because the global random generator is protected by a mutex. By moving it to `init()`, the seeding process happens only once during package initialization, improving throughput.
 **Impact**: Performance benchmark demonstrated execution time improved from `420.2 ns/op` to `208.1 ns/op`, which makes it approximately two times faster.

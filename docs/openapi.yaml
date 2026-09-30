@@ -367,7 +367,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionsResponse'
+                $ref: '#/components/schemas/TransactionListResponse'
   /accounts/{id}/transactions/deposit:
     post:
       tags:
@@ -636,7 +636,7 @@ components:
           items:
             $ref: '#/components/schemas/AccountResponse'
         pagination:
-          $ref: '#/components/schemas/Pagination'
+          $ref: '#/components/schemas/PaginationInfo'
     TransactionResponse:
       type: object
       properties:
@@ -671,7 +671,7 @@ components:
           type: string
           format: date-time
           example: '2023-01-01T00:00:00Z'
-    TransactionsResponse:
+    TransactionListResponse:
       type: object
       properties:
         transactions:
@@ -679,8 +679,8 @@ components:
           items:
             $ref: '#/components/schemas/TransactionResponse'
         pagination:
-          $ref: '#/components/schemas/Pagination'
-    Pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+    PaginationInfo:
       type: object
       properties:
         page:

@@ -10,3 +10,7 @@
 ## 2026-09-20 - Transaction Response DTO Drift
 **Learning:** Recent codebase changes split the unified `TransactionResponse` payload into distinct `DepositResponse`, `WithdrawResponse`, and `TransferResponse` models to prevent information leakage (e.g., hiding `to_balance` during transfers). The `docs/openapi.yaml` did not automatically reflect these new schemas, causing the documentation for `/accounts/{id}/transactions/*` endpoints to drift and continue referencing the legacy `TransactionResponse`.
 **Action:** When inspecting recent commits, explicitly check if any unified DTOs have been split or refactored into distinct, operation-specific models in the `.go` files (like `internal/dto/transactions.go`) and ensure these exact schemas are created and referenced individually in the OpenAPI definitions.
+
+## 2026-10-01 - OpenAPI Struct Renaming and Fields Match
+**Learning:** During codebase evolution in `internal/dto/transactions.go`, unified payload names like `TransactionsResponse` were updated to `TransactionListResponse`, and `Pagination` to `PaginationInfo` with a new `TotalPages` field. The `docs/openapi.yaml` did not automatically reflect these renames and structural additions, causing documentation drift.
+**Action:** When inspecting recent commits, explicitly check if any DTO names or internal fields have been renamed or structurally expanded in the `.go` files (like adding `totalPages` to pagination data), and systematically replicate those precise schema renames and additions in the OpenAPI definitions.

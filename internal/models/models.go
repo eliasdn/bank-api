@@ -1,7 +1,7 @@
 package models
 
 import (
-	"errors"
+	"bank-api/internal/validation"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -16,10 +16,11 @@ type User struct {
 	Accounts     []Account `gorm:"foreignKey:UserID"`
 }
 
-// SetPassword hashes and sets the user's password
+// SetPassword validates complexity and sets the user's password
 func (u *User) SetPassword(password string) error {
-	if len(password) < 8 {
-		return errors.New("password must be at least 8 characters long")
+	validator := validation.New()
+	if err := validator.ValidatePassword(password); err != nil {
+		return err
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

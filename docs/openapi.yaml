@@ -1,7 +1,9 @@
 openapi: 3.0.3
 info:
   title: Bank API
-  description: 'A secure and scalable banking API for managing user accounts and transactions.
+  description: >
+    A secure and scalable banking API for managing user accounts and
+    transactions.
 
 
     ## Features
@@ -19,8 +21,8 @@ info:
 
     ## Authentication
 
-    This API uses JWT Bearer tokens for authentication. Include the token in the Authorization
-    header:
+    This API uses JWT Bearer tokens for authentication. Include the token in the
+    Authorization header:
 
     ```
 
@@ -31,16 +33,14 @@ info:
 
     ## Rate Limiting
 
-    API endpoints are rate-limited to prevent abuse. Rate limit information is included
-    in response headers:
+    API endpoints are rate-limited to prevent abuse. Rate limit information is
+    included in response headers:
 
     - `X-RateLimit-Limit`: Maximum requests allowed
 
     - `X-RateLimit-Remaining`: Remaining requests in current window
 
     - `X-RateLimit-Reset`: Time when rate limit resets
-
-    '
   version: 1.0.0
   contact:
     name: Bank API Support
@@ -49,17 +49,17 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
 servers:
-- url: http://localhost:8080/api/v1
-  description: Local development server
-- url: https://api.bankapi.com/v1
-  description: Production server
+  - url: http://127.0.0.1:8080/api/v1
+    description: Local development server
+  - url: https://api.bankapi.com/v1
+    description: Production server
 security:
-- bearerAuth: []
+  - bearerAuth: []
 paths:
   /health:
     get:
       tags:
-      - Health
+        - Health
       summary: Health check
       description: Basic health check endpoint
       security: []
@@ -74,10 +74,17 @@ paths:
                   status:
                     type: string
                     example: ok
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      operationId: getHealth
   /health/ready:
     get:
       tags:
-      - Health
+        - Health
       summary: Readiness check
       description: Check if the service is ready to accept traffic
       security: []
@@ -88,10 +95,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      operationId: getHealthReady
   /health/live:
     get:
       tags:
-      - Health
+        - Health
       summary: Liveness check
       description: Check if the service is alive
       security: []
@@ -102,10 +116,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      operationId: getHealthLive
   /auth/register:
     post:
       tags:
-      - Authentication
+        - Authentication
       summary: Register new user
       description: Create a new user account
       security: []
@@ -134,10 +155,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: postAuthRegister
   /auth/login:
     post:
       tags:
-      - Authentication
+        - Authentication
       summary: Login user
       description: Authenticate user and get JWT token
       security: []
@@ -160,14 +182,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: postAuthLogin
   /users/me:
     get:
       tags:
-      - Users
+        - Users
       summary: Get current user profile
       description: Retrieve profile information for the authenticated user
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       responses:
         '200':
           description: User profile retrieved successfully
@@ -187,13 +210,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: getUsersMe
     put:
       tags:
-      - Users
+        - Users
       summary: Update current user profile
       description: Update profile information for the authenticated user
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -225,13 +249,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: putUsersMe
     delete:
       tags:
-      - Users
+        - Users
       summary: Delete current user
       description: Delete the authenticated user account
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       responses:
         '200':
           description: User deleted successfully
@@ -245,28 +270,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: deleteUsersMe
   /accounts:
     get:
       tags:
-      - Accounts
+        - Accounts
       summary: Get user accounts
       description: Retrieve all accounts for the authenticated user
       parameters:
-      - name: limit
-        in: query
-        description: Number of accounts to return
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 20
-      - name: page
-        in: query
-        description: Pagination page number
-        schema:
-          type: integer
-          minimum: 1
-          default: 1
+        - name: limit
+          in: query
+          description: Number of accounts to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: page
+          in: query
+          description: Pagination page number
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
       responses:
         '200':
           description: Accounts retrieved successfully
@@ -274,9 +300,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountsResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      operationId: getAccounts
     post:
       tags:
-      - Accounts
+        - Accounts
       summary: Create new account
       description: Create a new bank account for the authenticated user
       requestBody:
@@ -298,19 +331,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: postAccounts
   /accounts/{id}:
     get:
       tags:
-      - Accounts
+        - Accounts
       summary: Get account details
       description: Retrieve details for a specific account
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: Account ID
-        schema:
-          type: integer
+        - name: id
+          in: path
+          required: true
+          description: Account ID
+          schema:
+            type: integer
       responses:
         '200':
           description: Account details retrieved
@@ -324,43 +358,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: getAccountsId
   /accounts/{id}/transactions:
     get:
       tags:
-      - Transactions
+        - Transactions
       summary: Get account transactions
       description: Retrieve transactions for a specific account
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: Account ID
-        schema:
-          type: integer
-      - name: limit
-        in: query
-        description: Number of transactions to return
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 20
-      - name: page
-        in: query
-        description: Pagination page number
-        schema:
-          type: integer
-          minimum: 1
-          default: 1
-      - name: type
-        in: query
-        description: Filter by transaction type
-        schema:
-          type: string
-          enum:
-          - deposit
-          - withdrawal
-          - transfer
+        - name: id
+          in: path
+          required: true
+          description: Account ID
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: Number of transactions to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: page
+          in: query
+          description: Pagination page number
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: type
+          in: query
+          description: Filter by transaction type
+          schema:
+            type: string
+            enum:
+              - deposit
+              - withdrawal
+              - transfer
       responses:
         '200':
           description: Transactions retrieved successfully
@@ -368,19 +403,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransactionListResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      operationId: getAccountsIdTransactions
   /accounts/{id}/transactions/deposit:
     post:
       tags:
-      - Transactions
+        - Transactions
       summary: Deposit funds
       description: Deposit funds into an account
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: Account ID
-        schema:
-          type: integer
+        - name: id
+          in: path
+          required: true
+          description: Account ID
+          schema:
+            type: integer
       requestBody:
         required: true
         content:
@@ -400,19 +442,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: postAccountsIdTransactionsDeposit
   /accounts/{id}/transactions/withdraw:
     post:
       tags:
-      - Transactions
+        - Transactions
       summary: Withdraw funds
       description: Withdraw funds from an account
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: Account ID
-        schema:
-          type: integer
+        - name: id
+          in: path
+          required: true
+          description: Account ID
+          schema:
+            type: integer
       requestBody:
         required: true
         content:
@@ -438,19 +481,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: postAccountsIdTransactionsWithdraw
   /accounts/{id}/transactions/transfer:
     post:
       tags:
-      - Transactions
+        - Transactions
       summary: Transfer funds
       description: Transfer funds between accounts
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: Source account ID
-        schema:
-          type: integer
+        - name: id
+          in: path
+          required: true
+          description: Source account ID
+          schema:
+            type: integer
       requestBody:
         required: true
         content:
@@ -476,6 +520,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+      operationId: postAccountsIdTransactionsTransfer
+  /health/detailed:
+    get:
+      tags:
+        - Health
+      summary: Detailed health check
+      description: >-
+        Provides detailed health information including environment and build
+        info
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Detailed service health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      operationId: getHealthDetailed
 components:
   securitySchemes:
     bearerAuth:
@@ -486,10 +555,10 @@ components:
     RegisterRequest:
       type: object
       required:
-      - username
-      - email
-      - password
-      - fullName
+        - username
+        - email
+        - password
+        - fullName
       properties:
         username:
           type: string
@@ -515,8 +584,8 @@ components:
     LoginRequest:
       type: object
       required:
-      - username
-      - password
+        - username
+        - password
       properties:
         username:
           type: string
@@ -532,15 +601,15 @@ components:
         account_type:
           type: string
           enum:
-          - checking
-          - savings
-          - credit
+            - checking
+            - savings
+            - credit
           maxLength: 20
           example: checking
     DepositRequest:
       type: object
       required:
-      - amount
+        - amount
       properties:
         amount:
           type: number
@@ -550,7 +619,7 @@ components:
     WithdrawRequest:
       type: object
       required:
-      - amount
+        - amount
       properties:
         amount:
           type: number
@@ -560,8 +629,8 @@ components:
     TransferRequest:
       type: object
       required:
-      - amount
-      - to_account_id
+        - amount
+        - to_account_id
       properties:
         amount:
           type: number
@@ -615,9 +684,9 @@ components:
         account_type:
           type: string
           enum:
-          - checking
-          - savings
-          - credit
+            - checking
+            - savings
+            - credit
           maxLength: 20
           example: checking
         balance:
@@ -653,9 +722,9 @@ components:
         transaction_type:
           type: string
           enum:
-          - deposit
-          - withdrawal
-          - transfer
+            - deposit
+            - withdrawal
+            - transfer
           example: deposit
         reference:
           type: string
@@ -663,9 +732,9 @@ components:
         status:
           type: string
           enum:
-          - pending
-          - completed
-          - failed
+            - pending
+            - completed
+            - failed
           example: completed
         created_at:
           type: string
@@ -783,7 +852,7 @@ components:
         balance:
           type: number
           format: double
-          example: 1050.0
+          example: 1050
         transaction_id:
           type: integer
           example: 1
@@ -796,7 +865,7 @@ components:
         balance:
           type: number
           format: double
-          example: 950.0
+          example: 950
         transaction_id:
           type: integer
           example: 2
@@ -809,7 +878,43 @@ components:
         from_balance:
           type: number
           format: double
-          example: 850.0
+          example: 850
         transaction_id:
           type: integer
           example: 3
+    DetailedHealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+          example: '2023-01-01T00:00:00Z'
+        version:
+          type: string
+          example: 1.0.0
+        uptime:
+          type: string
+          example: running
+        checks:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                example: healthy
+              message:
+                type: string
+                example: Database is responsive
+              data:
+                type: object
+        environment:
+          type: string
+          example: debug
+        build_info:
+          type: object
+          additionalProperties:
+            type: string

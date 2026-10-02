@@ -69,29 +69,33 @@ func (v *Validator) ValidateEmail(email string) error {
 		return errors.NewValidationError("email must be between %d and %d characters", MinEmailLength, MaxEmailLength)
 	}
 
+	// Fast path manual email validation
+	// Optimization: Merged null byte check with the first username validation loop and replaced strings.IndexByte with manual search to avoid function call overhead and multiple string iterations.
+	atIndex := -1
 	for i := 0; i < len(email); i++ {
 		c := email[i]
 		if c == 0 || c == '\r' || c == '\n' {
 			return errors.NewValidationError("email cannot contain null bytes or line breaks")
 		}
-	}
-
-	// Fast path manual email validation
-	atIndex := strings.IndexByte(email, '@')
-	if atIndex <= 0 || atIndex == len(email)-1 {
-		return errors.NewValidationError("invalid email format")
-	}
-
-	for i := 0; i < atIndex; i++ {
-		c := email[i]
+		if c == '@' {
+			atIndex = i
+			break
+		}
 		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '%' || c == '+' || c == '-') {
 			return errors.NewValidationError("invalid email format")
 		}
 	}
 
+	if atIndex <= 0 || atIndex == len(email)-1 {
+		return errors.NewValidationError("invalid email format")
+	}
+
 	dotIndex := -1
 	for i := atIndex + 1; i < len(email); i++ {
 		c := email[i]
+		if c == 0 || c == '\r' || c == '\n' {
+			return errors.NewValidationError("email cannot contain null bytes or line breaks")
+		}
 		if c == '.' {
 			dotIndex = i
 		} else if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-') {

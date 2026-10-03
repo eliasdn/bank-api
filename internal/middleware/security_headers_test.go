@@ -37,4 +37,5 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	assert.Equal(t, "same-origin", w.Header().Get("Cross-Origin-Resource-Policy"))
 	assert.Equal(t, "no-store, max-age=0, must-revalidate", w.Header().Get("Cache-Control"))
 	assert.Equal(t, "no-cache", w.Header().Get("Pragma"))
+	assert.Equal(t, "", w.Header().Get("Server"))
 }

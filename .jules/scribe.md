@@ -14,3 +14,6 @@
 ## 2026-10-01 - OpenAPI Struct Renaming and Fields Match
 **Learning:** During codebase evolution in `internal/dto/transactions.go`, unified payload names like `TransactionsResponse` were updated to `TransactionListResponse`, and `Pagination` to `PaginationInfo` with a new `TotalPages` field. The `docs/openapi.yaml` did not automatically reflect these renames and structural additions, causing documentation drift.
 **Action:** When inspecting recent commits, explicitly check if any DTO names or internal fields have been renamed or structurally expanded in the `.go` files (like adding `totalPages` to pagination data), and systematically replicate those precise schema renames and additions in the OpenAPI definitions.
+## 2026-10-04 - Rate Limiter Documentation Drift
+**Learning:** The codebase was updated to replace deprecated `X-RateLimit-*` headers with a standard `Retry-After` header during rate limit failures (Status 429) across endpoints. However, `docs/openapi.yaml` drifted, continuing to document the removed `X-RateLimit-*` headers without defining a 429 response structure.
+**Action:** When updating OpenAPI docs for rate limiter changes, always verify and perfectly match the error response code (e.g. `429 Too Many Requests`) and explicit headers (e.g. `Retry-After`) returned by the middleware across all rate-limited endpoints.

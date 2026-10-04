@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bank-api/internal/config"
+	"bank-api/internal/validation"
 
 	"net/http"
 	"strconv"
@@ -69,15 +70,15 @@ func (rl *RateLimiter) StrictLimitByIP(ip string) *rate.Limiter {
 func normalizeUserID(userID interface{}) string {
 	switch v := userID.(type) {
 	case uint:
-		return strconv.FormatUint(uint64(v), 10)
+		return validation.FormatUint(uint64(v))
 	case uint64:
-		return strconv.FormatUint(v, 10)
+		return validation.FormatUint(v)
 	case int:
 		return strconv.FormatInt(int64(v), 10)
 	case int64:
 		return strconv.FormatInt(v, 10)
 	case float64:
-		return strconv.FormatUint(uint64(v), 10)
+		return validation.FormatUint(uint64(v))
 	case string:
 		return v
 	default:

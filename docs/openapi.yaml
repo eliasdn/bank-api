@@ -36,11 +36,7 @@ info:
     API endpoints are rate-limited to prevent abuse. Rate limit information is
     included in response headers:
 
-    - `X-RateLimit-Limit`: Maximum requests allowed
-
-    - `X-RateLimit-Remaining`: Remaining requests in current window
-
-    - `X-RateLimit-Reset`: Time when rate limit resets
+    - `Retry-After`: Time in seconds to wait before making a new request
   version: 1.0.0
   contact:
     name: Bank API Support
@@ -80,6 +76,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: getHealth
   /health/ready:
     get:
@@ -101,6 +108,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: getHealthReady
   /health/live:
     get:
@@ -122,6 +140,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: getHealthLive
   /auth/register:
     post:
@@ -155,6 +184,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: postAuthRegister
   /auth/login:
     post:
@@ -182,6 +222,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: postAuthLogin
   /users/me:
     get:
@@ -210,6 +261,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: getUsersMe
     put:
       tags:
@@ -249,6 +311,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: putUsersMe
     delete:
       tags:
@@ -270,6 +343,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: deleteUsersMe
   /accounts:
     get:
@@ -306,6 +390,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: getAccounts
     post:
       tags:
@@ -331,6 +426,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: postAccounts
   /accounts/{id}:
     get:
@@ -358,6 +464,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: getAccountsId
   /accounts/{id}/transactions:
     get:
@@ -409,6 +526,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: getAccountsIdTransactions
   /accounts/{id}/transactions/deposit:
     post:
@@ -442,6 +570,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: postAccountsIdTransactionsDeposit
   /accounts/{id}/transactions/withdraw:
     post:
@@ -481,6 +620,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: postAccountsIdTransactionsWithdraw
   /accounts/{id}/transactions/transfer:
     post:
@@ -520,6 +670,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: postAccountsIdTransactionsTransfer
   /health/detailed:
     get:
@@ -544,6 +705,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
       operationId: getHealthDetailed
 components:
   securitySchemes:

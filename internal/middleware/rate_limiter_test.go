@@ -97,6 +97,19 @@ func TestRateLimiter(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
+	t.Run("User-based rate limiting with different ID types", func(t *testing.T) {
+		rl := NewRateLimiter(&config.AppConfig{})
+		defer rl.StopCleanup()
+
+		limiterUint := rl.LimitByUser(uint(42))
+		limiterFloat := rl.LimitByUser(float64(42))
+		limiterString := rl.LimitByUser("42")
+
+		// All representations of ID 42 should map to the exact same rate limiter instance
+		assert.Same(t, limiterUint, limiterFloat)
+		assert.Same(t, limiterUint, limiterString)
+	})
+
 	t.Run("Get client IP from headers", func(t *testing.T) {
 		rl := NewRateLimiter(&config.AppConfig{})
 		defer rl.StopCleanup()

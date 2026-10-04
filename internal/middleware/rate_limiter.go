@@ -4,6 +4,7 @@ import (
 	"bank-api/internal/config"
 
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -63,15 +64,37 @@ func (rl *RateLimiter) StrictLimitByIP(ip string) *rate.Limiter {
 	return actual.(*rate.Limiter)
 }
 
+// normalizeUserID normalizes different user ID types (uint, float64, string, etc.) to a canonical string key
+// to prevent rate limit bypasses caused by context key type mismatches across middlewares.
+func normalizeUserID(userID interface{}) string {
+	switch v := userID.(type) {
+	case uint:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint64:
+		return strconv.FormatUint(v, 10)
+	case int:
+		return strconv.FormatInt(int64(v), 10)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case float64:
+		return strconv.FormatUint(uint64(v), 10)
+	case string:
+		return v
+	default:
+		return "unknown"
+	}
+}
+
 // LimitByUser creates or gets a rate limiter for the given user ID
 func (rl *RateLimiter) LimitByUser(userID interface{}) *rate.Limiter {
-	if val, ok := rl.userLimiters.Load(userID); ok {
+	key := normalizeUserID(userID)
+	if val, ok := rl.userLimiters.Load(key); ok {
 		return val.(*rate.Limiter)
 	}
 
 	// 1000 requests per hour per authenticated user
 	limiter := rate.NewLimiter(rate.Every(time.Hour), 1000)
-	actual, _ := rl.userLimiters.LoadOrStore(userID, limiter)
+	actual, _ := rl.userLimiters.LoadOrStore(key, limiter)
 	return actual.(*rate.Limiter)
 }
 

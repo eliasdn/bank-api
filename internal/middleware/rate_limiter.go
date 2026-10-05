@@ -13,6 +13,12 @@ import (
 	"golang.org/x/time/rate"
 )
 
+var (
+	rateLimitIPExceededJSON     = []byte(`{"error":{"code":"rate_limit_exceeded","message":"Too many requests from this IP address","retry_after":"60"}}`)
+	rateLimitUserExceededJSON   = []byte(`{"error":{"code":"rate_limit_exceeded","message":"Too many requests for this user account","retry_after":"3600"}}`)
+	strictRateLimitExceededJSON = []byte(`{"error":{"code":"rate_limit_exceeded","message":"Too many requests to this endpoint from this IP address","retry_after":"60"}}`)
+)
+
 // RateLimiter provides rate limiting functionality
 type RateLimiter struct {
 	config *config.AppConfig
@@ -141,13 +147,8 @@ func (rl *RateLimiter) RateLimit() gin.HandlerFunc {
 		ipLimiter := rl.LimitByIP(clientIP)
 		if !ipLimiter.Allow() {
 			c.Header("Retry-After", "60")
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error": gin.H{
-					"code":        "rate_limit_exceeded",
-					"message":     "Too many requests from this IP address",
-					"retry_after": "60",
-				},
-			})
+			// Optimization: Use pre-allocated JSON response to avoid reflection and map allocations during rate limit rejection hot-path
+			c.Data(http.StatusTooManyRequests, "application/json", rateLimitIPExceededJSON)
 			c.Abort()
 			return
 		}
@@ -157,13 +158,8 @@ func (rl *RateLimiter) RateLimit() gin.HandlerFunc {
 			userLimiter := rl.LimitByUser(userID)
 			if !userLimiter.Allow() {
 				c.Header("Retry-After", "3600")
-				c.JSON(http.StatusTooManyRequests, gin.H{
-					"error": gin.H{
-						"code":        "rate_limit_exceeded",
-						"message":     "Too many requests for this user account",
-						"retry_after": "3600",
-					},
-				})
+				// Optimization: Use pre-allocated JSON response to avoid reflection and map allocations during rate limit rejection hot-path
+				c.Data(http.StatusTooManyRequests, "application/json", rateLimitUserExceededJSON)
 				c.Abort()
 				return
 			}
@@ -183,13 +179,8 @@ func (rl *RateLimiter) StrictRateLimit() gin.HandlerFunc {
 		ipLimiter := rl.StrictLimitByIP(clientIP)
 		if !ipLimiter.Allow() {
 			c.Header("Retry-After", "60")
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error": gin.H{
-					"code":        "rate_limit_exceeded",
-					"message":     "Too many requests to this endpoint from this IP address",
-					"retry_after": "60",
-				},
-			})
+			// Optimization: Use pre-allocated JSON response to avoid reflection and map allocations during strict rate limit rejection hot-path
+			c.Data(http.StatusTooManyRequests, "application/json", strictRateLimitExceededJSON)
 			c.Abort()
 			return
 		}

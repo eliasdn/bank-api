@@ -26,10 +26,13 @@ func (m *ErrorLogger) LogErrors() gin.HandlerFunc {
 		start := time.Now()
 
 		// Generate or get request ID
-		requestID := c.GetString("X-Request-ID")
+		requestID := c.GetString("request_id")
 		if requestID == "" {
+			requestID = c.GetString("X-Request-ID")
+		}
+		if !isValidRequestID(requestID) {
 			requestID = uuid.NewString()
-			c.Set("X-Request-ID", requestID)
+			c.Set("request_id", requestID)
 		}
 
 		c.Next()

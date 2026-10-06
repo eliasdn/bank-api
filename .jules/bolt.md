@@ -163,3 +163,6 @@
 ## 2026-10-06 - [Pre-allocate JSON responses in auth middleware]
 **Learning:** Returning static error responses in the `Authenticate` middleware using `c.AbortWithStatusJSON` combined with `gin.H` introduces overhead per request from dynamic map allocation, garbage collection, and JSON reflection.
 **Action:** When returning static JSON errors in hot-path middleware like authentication, define the JSON string as a package-level `[]byte` variable and serve it directly using `c.Data(status, "application/json", preallocatedBytes)` followed by `c.Abort()` to achieve zero-allocation responses.
+## 2026-10-06 - [Pre-allocate JSON responses in health checks]
+**Learning:** Returning static JSON responses in health checks (like `ReadinessCheck` and `LivenessCheck`) using `c.JSON` combined with `gin.H` introduces overhead from dynamic map allocation, garbage collection, and JSON reflection on every request. This is particularly wasteful for endpoints probed constantly by Kubernetes or load balancers.
+**Action:** When returning simple static JSON in health endpoints, pre-allocate the response as a package-level `[]byte` and serve it directly using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to achieve zero-allocation responses.

@@ -9,6 +9,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// Pre-allocated static JSON responses to avoid dynamic map (gin.H) allocation and JSON reflection overhead in hot paths
+var (
+	readyJSON        = []byte(`{"status":"ready"}`)
+	aliveJSON        = []byte(`{"status":"alive"}`)
+	dbNotReadyJSON   = []byte(`{"status":"not ready","message":"Database not ready"}`)
+)
+
 // HealthHandler handles health check endpoints
 type HealthHandler struct {
 	db *gorm.DB
@@ -66,23 +73,16 @@ func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 	// Check if database is ready
 	dbCheck := h.checkDatabase()
 	if dbCheck.Status != "healthy" {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"status":  "not ready",
-			"message": "Database not ready",
-		})
+		c.Data(http.StatusServiceUnavailable, "application/json; charset=utf-8", dbNotReadyJSON)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status": "ready",
-	})
+	c.Data(http.StatusOK, "application/json; charset=utf-8", readyJSON)
 }
 
 // LivenessCheck performs a liveness check for Kubernetes
 func (h *HealthHandler) LivenessCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status": "alive",
-	})
+	c.Data(http.StatusOK, "application/json; charset=utf-8", aliveJSON)
 }
 
 // checkDatabase checks the database connection

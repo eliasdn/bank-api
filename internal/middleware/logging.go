@@ -36,12 +36,28 @@ type RequestLog struct {
 	Error        string        `json:"error,omitempty"`
 }
 
+// isValidRequestID validates that a client-provided X-Request-ID is safe and well-formed.
+// Enforces a max length of 64 characters and rejects control characters, newlines,
+// and null bytes to prevent CRLF log injection and HTTP response header injection.
+func isValidRequestID(id string) bool {
+	if len(id) == 0 || len(id) > 64 {
+		return false
+	}
+	for i := 0; i < len(id); i++ {
+		c := id[i]
+		if c < 32 || c == 127 || c == 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // LoggingMiddleware creates a middleware that logs all HTTP requests
 func (rl *RequestLogger) LoggingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Generate or extract request ID
+		// Generate or validate request ID
 		requestID := c.GetHeader("X-Request-ID")
-		if requestID == "" {
+		if !isValidRequestID(requestID) {
 			requestID = uuid.NewString()
 		}
 

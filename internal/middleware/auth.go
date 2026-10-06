@@ -10,6 +10,14 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var (
+	authErrorMissingHeaderJSON      = []byte(`{"error":"Authorization header is required"}`)
+	authErrorBearerNotFoundJSON     = []byte(`{"error":"Bearer token not found"}`)
+	authErrorInvalidTokenJSON       = []byte(`{"error":"Invalid token"}`)
+	authErrorInvalidTokenClaimsJSON = []byte(`{"error":"Invalid token claims"}`)
+	authErrorInvalidUserIDJSON      = []byte(`{"error":"Invalid user ID in token"}`)
+)
+
 type AuthMiddleware struct {
 	config *config.AppConfig
 	secret []byte
@@ -26,12 +34,14 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+			c.Data(http.StatusUnauthorized, "application/json", authErrorMissingHeaderJSON)
+			c.Abort()
 			return
 		}
 
 		if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Bearer token not found"})
+			c.Data(http.StatusUnauthorized, "application/json", authErrorBearerNotFoundJSON)
+			c.Abort()
 			return
 		}
 		tokenString := authHeader[7:]
@@ -44,13 +54,15 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidTokenJSON)
+			c.Abort()
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidTokenClaimsJSON)
+			c.Abort()
 			return
 		}
 
@@ -66,7 +78,8 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 				c.Set("userID", subStr)
 			}
 		} else {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in token"})
+			c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidUserIDJSON)
+			c.Abort()
 			return
 		}
 

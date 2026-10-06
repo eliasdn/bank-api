@@ -160,3 +160,6 @@
 ## 2026-10-05 - [Pre-allocate JSON responses in hot paths]
 **Learning:** In hot paths that frequently return static JSON responses (like rate limit rejections under heavy load), using `c.JSON` with dynamic map allocations (`gin.H`) introduces significant overhead from memory allocation, garbage collection, and JSON reflection.
 **Action:** Always pre-allocate static JSON responses as package-level byte slices (`[]byte`) and serve them using `c.Data(status, "application/json", preallocatedBytes)` to achieve zero-allocation responses.
+## 2026-10-06 - [Pre-allocate JSON responses in auth middleware]
+**Learning:** Returning static error responses in the `Authenticate` middleware using `c.AbortWithStatusJSON` combined with `gin.H` introduces overhead per request from dynamic map allocation, garbage collection, and JSON reflection.
+**Action:** When returning static JSON errors in hot-path middleware like authentication, define the JSON string as a package-level `[]byte` variable and serve it directly using `c.Data(status, "application/json", preallocatedBytes)` followed by `c.Abort()` to achieve zero-allocation responses.

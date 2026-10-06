@@ -14,7 +14,7 @@ import (
 func (h *Handler) Deposit(c *gin.Context) {
 	userID := getUserID(c)
 	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.Data(http.StatusUnauthorized, "application/json", unauthorizedErrorJSON)
 		return
 	}
 
@@ -116,7 +116,7 @@ func (h *Handler) Deposit(c *gin.Context) {
 func (h *Handler) Withdraw(c *gin.Context) {
 	userID := getUserID(c)
 	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.Data(http.StatusUnauthorized, "application/json", unauthorizedErrorJSON)
 		return
 	}
 
@@ -228,7 +228,7 @@ func (h *Handler) Withdraw(c *gin.Context) {
 func (h *Handler) Transfer(c *gin.Context) {
 	userID := getUserID(c)
 	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.Data(http.StatusUnauthorized, "application/json", unauthorizedErrorJSON)
 		return
 	}
 
@@ -376,7 +376,7 @@ func (h *Handler) Transfer(c *gin.Context) {
 func (h *Handler) GetTransactions(c *gin.Context) {
 	userID := getUserID(c)
 	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.Data(http.StatusUnauthorized, "application/json", unauthorizedErrorJSON)
 		return
 	}
 

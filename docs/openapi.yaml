@@ -65,11 +65,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
+                $ref: '#/components/schemas/HealthResponse'
         '400':
           description: Bad Request
           content:
@@ -101,24 +97,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
-        '400':
-          description: Bad Request
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ready
+        '503':
+          description: Service Unavailable - Database not ready
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '429':
-          description: Too Many Requests - Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          headers:
-            Retry-After:
-              description: Time in seconds to wait before making a new request
-              schema:
-                type: integer
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: not ready
+                  message:
+                    type: string
+                    example: Database not ready
       operationId: getHealthReady
   /health/live:
     get:
@@ -133,24 +129,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '429':
-          description: Too Many Requests - Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          headers:
-            Retry-After:
-              description: Time in seconds to wait before making a new request
-              schema:
-                type: integer
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: alive
       operationId: getHealthLive
   /auth/register:
     post:
@@ -941,17 +924,30 @@ components:
       properties:
         status:
           type: string
-          example: ok
+          example: healthy
         timestamp:
           type: string
           format: date-time
           example: '2023-01-01T00:00:00Z'
+        version:
+          type: string
+          example: 1.0.0
         uptime:
           type: string
-          example: 1h30m45s
-        database:
-          type: string
-          example: connected
+          example: running
+        checks:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                example: healthy
+              message:
+                type: string
+                example: Database is responsive
+              data:
+                type: object
     UserInfoResponse:
       type: object
       properties:

@@ -28,8 +28,16 @@ func getUserID(c *gin.Context) uint {
 	return 0
 }
 
-
 // unauthorizedErrorJSON is a pre-allocated JSON response used to avoid
 // map allocations (gin.H) and JSON reflection overhead in hot paths
 // for unauthenticated requests.
 var unauthorizedErrorJSON = []byte(`{"error":"unauthorized"}`)
+
+var (
+	invalidRequestErrorJSON           = []byte(`{"error":"invalid request"}`)
+	invalidAccountIDErrorJSON         = []byte(`{"error":"invalid account ID"}`)
+	accountNotFoundErrorJSON          = []byte(`{"error":"account not found"}`)
+	failedToRetrieveAccountsErrorJSON = []byte(`{"error":"failed to retrieve accounts"}`)
+	failedToCreateAccountErrorJSON    = []byte(`{"error":"failed to create account"}`)
+	failedToRetrieveAccountErrorJSON  = []byte(`{"error":"failed to retrieve account"}`)
+)

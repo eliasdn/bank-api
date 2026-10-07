@@ -83,7 +83,7 @@ func (h *Handler) GetAccounts(c *gin.Context) {
 			Limit(limit).
 			Offset(offset).
 			Find(&accounts).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve accounts"})
+			c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToRetrieveAccountsErrorJSON)
 			return
 		}
 	}
@@ -115,7 +115,7 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 
 	var req CreateAccountRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidRequestErrorJSON)
 		return
 	}
 
@@ -139,7 +139,7 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 	}
 
 	if err := h.DB.Create(&account).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create account"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToCreateAccountErrorJSON)
 		return
 	}
 
@@ -164,16 +164,16 @@ func (h *Handler) GetAccount(c *gin.Context) {
 	accountIDStr := c.Param("id")
 	accountID := validation.ParseInt(accountIDStr, 0)
 	if accountID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidAccountIDErrorJSON)
 		return
 	}
 
 	var account models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", accountID, userID).First(&account).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
+			c.Data(http.StatusNotFound, "application/json; charset=utf-8", accountNotFoundErrorJSON)
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve account"})
+			c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToRetrieveAccountErrorJSON)
 		}
 		return
 	}

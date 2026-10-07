@@ -166,3 +166,6 @@
 ## 2026-10-06 - [Pre-allocate JSON responses in health checks]
 **Learning:** Returning static JSON responses in health checks (like `ReadinessCheck` and `LivenessCheck`) using `c.JSON` combined with `gin.H` introduces overhead from dynamic map allocation, garbage collection, and JSON reflection on every request. This is particularly wasteful for endpoints probed constantly by Kubernetes or load balancers.
 **Action:** When returning simple static JSON in health endpoints, pre-allocate the response as a package-level `[]byte` and serve it directly using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to achieve zero-allocation responses.
+## 2026-10-07 - [Pre-allocate JSON responses in handlers]
+**Learning:** Handlers that frequently return identical static JSON error responses (e.g., `{"error":"invalid request"}`) using `c.JSON` paired with dynamic map allocations (`gin.H`) introduce significant memory allocation and JSON reflection overhead in hot paths.
+**Action:** Identify common static JSON responses in handlers, define them as pre-allocated package-level `[]byte` variables (e.g., in `utils.go`), and serve them using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to eliminate dynamic allocations and garbage collection overhead.

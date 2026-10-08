@@ -34,6 +34,21 @@ func getUserID(c *gin.Context) uint {
 var unauthorizedErrorJSON = []byte(`{"error":"unauthorized"}`)
 
 var (
+	atLeastOneFieldMustBeProvidedErrorJSON = []byte(`{"error":"at least one field must be provided"}`)
+	databaseErrorJSON                      = []byte(`{"error":"database error"}`)
+	emailAlreadyInUseErrorJSON             = []byte(`{"error":"email already in use"}`)
+	failedToCreateUserErrorJSON            = []byte(`{"error":"failed to create user"}`)
+	failedToDeleteUserAccountsErrorJSON    = []byte(`{"error":"failed to delete user accounts"}`)
+	failedToDeleteUserErrorJSON            = []byte(`{"error":"failed to delete user"}`)
+	failedToGenerateTokenErrorJSON         = []byte(`{"error":"failed to generate token"}`)
+	failedToHashPasswordErrorJSON          = []byte(`{"error":"failed to hash password"}`)
+	failedToUpdateUserErrorJSON            = []byte(`{"error":"failed to update user"}`)
+	invalidCredentialsErrorJSON            = []byte(`{"error":"invalid credentials"}`)
+	invalidEmailFormatErrorJSON            = []byte(`{"error":"invalid email format"}`)
+	invalidUserIDErrorJSON                 = []byte(`{"error":"invalid user ID"}`)
+	userNotFoundErrorJSON                  = []byte(`{"error":"user not found"}`)
+	usernameOrEmailAlreadyExistsErrorJSON  = []byte(`{"error":"username or email already exists"}`)
+
 	invalidRequestErrorJSON           = []byte(`{"error":"invalid request"}`)
 	invalidAccountIDErrorJSON         = []byte(`{"error":"invalid account ID"}`)
 	accountNotFoundErrorJSON          = []byte(`{"error":"account not found"}`)

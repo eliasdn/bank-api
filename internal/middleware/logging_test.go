@@ -14,34 +14,34 @@ func TestLoggingMiddleware_RequestIDValidation(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name          string
+		name           string
 		incomingHeader string
-		expectSame    bool
+		expectSame     bool
 	}{
 		{
-			name:          "valid custom request ID",
+			name:           "valid custom request ID",
 			incomingHeader: "req-12345-abcde",
-			expectSame:    true,
+			expectSame:     true,
 		},
 		{
-			name:          "invalid request ID with CRLF injection",
+			name:           "invalid request ID with CRLF injection",
 			incomingHeader: "req-123\r\nX-Injected: malicious",
-			expectSame:    false,
+			expectSame:     false,
 		},
 		{
-			name:          "invalid request ID with null byte",
+			name:           "invalid request ID with null byte",
 			incomingHeader: "req-123\x00bad",
-			expectSame:    false,
+			expectSame:     false,
 		},
 		{
-			name:          "invalid request ID exceeding 64 characters",
+			name:           "invalid request ID exceeding 64 characters",
 			incomingHeader: strings.Repeat("a", 65),
-			expectSame:    false,
+			expectSame:     false,
 		},
 		{
-			name:          "empty request ID header",
+			name:           "empty request ID header",
 			incomingHeader: "",
-			expectSame:    false,
+			expectSame:     false,
 		},
 	}
 

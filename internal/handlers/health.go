@@ -11,9 +11,9 @@ import (
 
 // Pre-allocated static JSON responses to avoid dynamic map (gin.H) allocation and JSON reflection overhead in hot paths
 var (
-	readyJSON        = []byte(`{"status":"ready"}`)
-	aliveJSON        = []byte(`{"status":"alive"}`)
-	dbNotReadyJSON   = []byte(`{"status":"not ready","message":"Database not ready"}`)
+	readyJSON      = []byte(`{"status":"ready"}`)
+	aliveJSON      = []byte(`{"status":"alive"}`)
+	dbNotReadyJSON = []byte(`{"status":"not ready","message":"Database not ready"}`)
 )
 
 // HealthHandler handles health check endpoints

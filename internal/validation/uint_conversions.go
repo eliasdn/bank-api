@@ -91,4 +91,3 @@ func FormatFloatAmount(amount float64) string {
 	}
 	return string(b[i:])
 }
-

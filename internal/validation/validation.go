@@ -53,6 +53,9 @@ func (v *Validator) ValidateUsername(username string) error {
 	// Validate using a manual byte loop to avoid regex overhead in hot paths
 	for i := 0; i < len(username); i++ {
 		c := username[i]
+		if c == 0 || c == '\r' || c == '\n' {
+			return errors.NewValidationError("username cannot contain null bytes or line breaks")
+		}
 		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-') {
 			return errors.NewValidationError("username can only contain letters, numbers, underscores, and hyphens")
 		}

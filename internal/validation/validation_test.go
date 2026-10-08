@@ -23,6 +23,9 @@ func TestValidateUsername(t *testing.T) {
 		{"too long", strings.Repeat("a", 51), true},
 		{"invalid characters", "john@doe", true},
 		{"empty", "", true},
+		{"username with null byte", "john\x00doe", true},
+		{"username with newline", "john\ndoe", true},
+		{"username with carriage return", "john\rdoe", true},
 	}
 
 	for _, tt := range tests {

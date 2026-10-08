@@ -21,19 +21,19 @@ func (h *Handler) Deposit(c *gin.Context) {
 	accountIDStr := c.Param("id")
 	accountID := validation.ParseInt(accountIDStr, 0)
 	if accountID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidAccountIDErrorJSON)
 		return
 	}
 
 	var account models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", accountID, userID).First(&account).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
+		c.Data(http.StatusNotFound, "application/json; charset=utf-8", accountNotFoundErrorJSON)
 		return
 	}
 
 	var deposit dto.DepositRequest
 	if err := c.ShouldBindJSON(&deposit); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid deposit amount"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidDepositAmountErrorJSON)
 		return
 	}
 
@@ -59,14 +59,14 @@ func (h *Handler) Deposit(c *gin.Context) {
 	// Update account balance
 	if err := tx.Model(&account).UpdateColumn("balance", gorm.Expr("balance + ?", deposit.Amount)).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update balance"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateBalanceErrorJSON)
 		return
 	}
 
 	// Reload account to get the new balance
 	if err := tx.First(&account, account.ID).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reload account"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToReloadAccountErrorJSON)
 		return
 	}
 
@@ -80,12 +80,12 @@ func (h *Handler) Deposit(c *gin.Context) {
 	}
 	if err := tx.Create(&transaction).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record transaction"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToRecordTransactionErrorJSON)
 		return
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "transaction failed"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", transactionFailedErrorJSON)
 		return
 	}
 
@@ -123,19 +123,19 @@ func (h *Handler) Withdraw(c *gin.Context) {
 	accountIDStr := c.Param("id")
 	accountID := validation.ParseInt(accountIDStr, 0)
 	if accountID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidAccountIDErrorJSON)
 		return
 	}
 
 	var account models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", accountID, userID).First(&account).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
+		c.Data(http.StatusNotFound, "application/json; charset=utf-8", accountNotFoundErrorJSON)
 		return
 	}
 
 	var withdrawal dto.WithdrawRequest
 	if err := c.ShouldBindJSON(&withdrawal); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid withdrawal amount"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidWithdrawalAmountErrorJSON)
 		return
 	}
 
@@ -151,7 +151,7 @@ func (h *Handler) Withdraw(c *gin.Context) {
 	}
 
 	if account.Balance < withdrawal.Amount {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "insufficient funds"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", insufficientFundsErrorJSON)
 		return
 	}
 
@@ -167,19 +167,19 @@ func (h *Handler) Withdraw(c *gin.Context) {
 	res := tx.Model(&account).Where("balance >= ?", withdrawal.Amount).UpdateColumn("balance", gorm.Expr("balance - ?", withdrawal.Amount))
 	if res.Error != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update balance"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateBalanceErrorJSON)
 		return
 	}
 	if res.RowsAffected == 0 {
 		tx.Rollback()
-		c.JSON(http.StatusBadRequest, gin.H{"error": "insufficient funds"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", insufficientFundsErrorJSON)
 		return
 	}
 
 	// Reload account to get the new balance
 	if err := tx.First(&account, account.ID).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reload account"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToReloadAccountErrorJSON)
 		return
 	}
 
@@ -193,12 +193,12 @@ func (h *Handler) Withdraw(c *gin.Context) {
 	}
 	if err := tx.Create(&transaction).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record transaction"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToRecordTransactionErrorJSON)
 		return
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "transaction failed"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", transactionFailedErrorJSON)
 		return
 	}
 
@@ -235,19 +235,19 @@ func (h *Handler) Transfer(c *gin.Context) {
 	fromAccountIDStr := c.Param("id")
 	fromAccountID := validation.ParseInt(fromAccountIDStr, 0)
 	if fromAccountID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidAccountIDErrorJSON)
 		return
 	}
 
 	var fromAccount models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", fromAccountID, userID).First(&fromAccount).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "source account not found"})
+		c.Data(http.StatusNotFound, "application/json; charset=utf-8", sourceAccountNotFoundErrorJSON)
 		return
 	}
 
 	var transfer dto.TransferRequest
 	if err := c.ShouldBindJSON(&transfer); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid transfer request"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidTransferRequestErrorJSON)
 		return
 	}
 
@@ -263,14 +263,14 @@ func (h *Handler) Transfer(c *gin.Context) {
 	}
 
 	if fromAccount.Balance < transfer.Amount {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "insufficient funds"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", insufficientFundsErrorJSON)
 		return
 	}
 
 	// Check if destination account exists
 	var toAccount models.Account
 	if err := h.DB.First(&toAccount, transfer.ToAccountID).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "destination account not found"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", destinationAccountNotFoundErrorJSON)
 		return
 	}
 
@@ -286,31 +286,31 @@ func (h *Handler) Transfer(c *gin.Context) {
 	res := tx.Model(&fromAccount).Where("balance >= ?", transfer.Amount).UpdateColumn("balance", gorm.Expr("balance - ?", transfer.Amount))
 	if res.Error != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update source account"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateSourceAccountErrorJSON)
 		return
 	}
 	if res.RowsAffected == 0 {
 		tx.Rollback()
-		c.JSON(http.StatusBadRequest, gin.H{"error": "insufficient funds"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", insufficientFundsErrorJSON)
 		return
 	}
 
 	// Update destination account
 	if err := tx.Model(&toAccount).UpdateColumn("balance", gorm.Expr("balance + ?", transfer.Amount)).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update destination account"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateDestinationAccountErrorJSON)
 		return
 	}
 
 	// Reload accounts to get accurate balances
 	if err := tx.First(&fromAccount, fromAccount.ID).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reload source account"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToReloadSourceAccountErrorJSON)
 		return
 	}
 	if err := tx.First(&toAccount, toAccount.ID).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reload destination account"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToReloadDestinationAccountErrorJSON)
 		return
 	}
 
@@ -332,18 +332,18 @@ func (h *Handler) Transfer(c *gin.Context) {
 
 	if err := tx.Create(&outgoingTx).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record outgoing transaction"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToRecordOutgoingTransactionErrorJSON)
 		return
 	}
 
 	if err := tx.Create(&incomingTx).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record incoming transaction"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToRecordIncomingTransactionErrorJSON)
 		return
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "transfer failed"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", transferFailedErrorJSON)
 		return
 	}
 
@@ -383,13 +383,13 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 	accountIDStr := c.Param("id")
 	accountID := validation.ParseInt(accountIDStr, 0)
 	if accountID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidAccountIDErrorJSON)
 		return
 	}
 
 	var account models.Account
 	if err := h.DB.Where("id = ? AND user_id = ?", accountID, userID).First(&account).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
+		c.Data(http.StatusNotFound, "application/json; charset=utf-8", accountNotFoundErrorJSON)
 		return
 	}
 
@@ -423,7 +423,7 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 			Limit(limit).
 			Offset(offset).
 			Find(&transactions).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve transactions"})
+			c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToRetrieveTransactionsErrorJSON)
 			return
 		}
 	}

@@ -169,3 +169,7 @@
 ## 2026-10-07 - [Pre-allocate JSON responses in handlers]
 **Learning:** Handlers that frequently return identical static JSON error responses (e.g., `{"error":"invalid request"}`) using `c.JSON` paired with dynamic map allocations (`gin.H`) introduce significant memory allocation and JSON reflection overhead in hot paths.
 **Action:** Identify common static JSON responses in handlers, define them as pre-allocated package-level `[]byte` variables (e.g., in `utils.go`), and serve them using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to eliminate dynamic allocations and garbage collection overhead.
+
+## 2023-10-24 - Zero-Allocation Error Responses in Hot Paths
+**Learning:** In high-throughput, transaction-heavy hot paths (like `Deposit`, `Withdraw`, `Transfer`), using `c.JSON(..., gin.H{...})` introduces unnecessary dynamic map allocations (`gin.H`) and JSON reflection overhead for static error responses. This causes extra garbage collection pressure under heavy load.
+**Action:** Replace `c.JSON` map allocations with pre-allocated package-level `[]byte` variables in `utils.go` (e.g., `invalidDepositAmountErrorJSON`). Serve them directly using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to achieve zero-allocation responses while exactly matching Gin's default Content-Type header.

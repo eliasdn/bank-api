@@ -173,3 +173,6 @@
 ## 2023-10-24 - Zero-Allocation Error Responses in Hot Paths
 **Learning:** In high-throughput, transaction-heavy hot paths (like `Deposit`, `Withdraw`, `Transfer`), using `c.JSON(..., gin.H{...})` introduces unnecessary dynamic map allocations (`gin.H`) and JSON reflection overhead for static error responses. This causes extra garbage collection pressure under heavy load.
 **Action:** Replace `c.JSON` map allocations with pre-allocated package-level `[]byte` variables in `utils.go` (e.g., `invalidDepositAmountErrorJSON`). Serve them directly using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to achieve zero-allocation responses while exactly matching Gin's default Content-Type header.
+## 2026-10-08 - [Pre-allocate JSON responses in user handler]
+**Learning:** Returning static error responses in the user handler using `c.JSON` combined with `gin.H` introduces overhead from dynamic map allocation, garbage collection, and JSON reflection on every request.
+**Action:** Identify static error responses in the user handler, define them as pre-allocated package-level `[]byte` variables in `utils.go`, and serve them directly using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to eliminate allocations.

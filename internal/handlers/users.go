@@ -41,7 +41,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	// Check if user already exists
 	var existingUser models.User
 	if err := h.DB.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "username or email already exists"})
+		c.Data(http.StatusConflict, "application/json; charset=utf-8", usernameOrEmailAlreadyExistsErrorJSON)
 		return
 	}
 
@@ -55,13 +55,13 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	// Hash password with configurable cost
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), h.Config.Security.BcryptCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToHashPasswordErrorJSON)
 		return
 	}
 	user.PasswordHash = string(hashedPassword)
 
 	if err := h.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToCreateUserErrorJSON)
 		return
 	}
 
@@ -98,7 +98,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	bcryptErr := bcrypt.CompareHashAndPassword([]byte(targetHash), []byte(req.Password))
 
 	if err != nil || bcryptErr != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		c.Data(http.StatusUnauthorized, "application/json; charset=utf-8", invalidCredentialsErrorJSON)
 		return
 	}
 
@@ -112,7 +112,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 
 	tokenString, err := token.SignedString([]byte(h.Config.JWT.Secret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToGenerateTokenErrorJSON)
 		return
 	}
 
@@ -144,9 +144,9 @@ func (h *Handler) GetUser(c *gin.Context) {
 	var user models.User
 	if err := h.DB.First(&user, userID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			c.Data(http.StatusNotFound, "application/json; charset=utf-8", userNotFoundErrorJSON)
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+			c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", databaseErrorJSON)
 		}
 		return
 	}
@@ -163,15 +163,15 @@ func (h *Handler) handleTestUser(c *gin.Context) {
 	idParam := c.Param("id")
 	userID, err := validation.ParseUint(idParam, 0)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidUserIDErrorJSON)
 		return
 	}
 
 	if err := h.DB.First(&user, uint(userID)).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			c.Data(http.StatusNotFound, "application/json; charset=utf-8", userNotFoundErrorJSON)
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+			c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", databaseErrorJSON)
 		}
 		return
 	}
@@ -193,9 +193,9 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	var user models.User
 	if err := h.DB.First(&user, userID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			c.Data(http.StatusNotFound, "application/json; charset=utf-8", userNotFoundErrorJSON)
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+			c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", databaseErrorJSON)
 		}
 		return
 	}
@@ -208,12 +208,12 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&updateData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidRequestErrorJSON)
 		return
 	}
 
 	if updateData.FullName == nil && updateData.Email == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "at least one field must be provided"})
+		c.Data(http.StatusBadRequest, "application/json; charset=utf-8", atLeastOneFieldMustBeProvidedErrorJSON)
 		return
 	}
 
@@ -227,13 +227,13 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	}
 	if updateData.Email != nil {
 		if err := validator.ValidateEmail(*updateData.Email); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email format"})
+			c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidEmailFormatErrorJSON)
 			return
 		}
 
 		var existingUser models.User
 		if err := h.DB.Where("email = ? AND id != ?", *updateData.Email, userID).First(&existingUser).Error; err == nil {
-			c.JSON(http.StatusConflict, gin.H{"error": "email already in use"})
+			c.Data(http.StatusConflict, "application/json; charset=utf-8", emailAlreadyInUseErrorJSON)
 			return
 		}
 		user.Email = *updateData.Email
@@ -247,11 +247,11 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	}()
 	if err := tx.Save(&user).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateUserErrorJSON)
 		return
 	}
 	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateUserErrorJSON)
 		return
 	}
 
@@ -275,9 +275,9 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 	var user models.User
 	if err := h.DB.First(&user, userID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			c.Data(http.StatusNotFound, "application/json; charset=utf-8", userNotFoundErrorJSON)
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+			c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", databaseErrorJSON)
 		}
 		return
 	}
@@ -293,19 +293,19 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 	// Soft-delete all bank accounts associated with the user to prevent orphaned accounts
 	if err := tx.Where("user_id = ?", userID).Delete(&models.Account{}).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user accounts"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToDeleteUserAccountsErrorJSON)
 		return
 	}
 
 	// Soft-delete the user
 	if err := tx.Delete(&user).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToDeleteUserErrorJSON)
 		return
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToDeleteUserErrorJSON)
 		return
 	}
 

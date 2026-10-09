@@ -1043,10 +1043,6 @@ components:
         message:
           type: string
           example: Transfer successful
-        from_balance:
-          type: number
-          format: double
-          example: 850
         transaction_id:
           type: integer
           example: 3

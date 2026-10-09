@@ -61,7 +61,6 @@ type WithdrawResponse struct {
 
 // TransferResponse represents a transfer response
 type TransferResponse struct {
-	Message       string  `json:"message"`
-	FromBalance   float64 `json:"from_balance"`
-	TransactionID uint    `json:"transaction_id"`
+	Message       string `json:"message"`
+	TransactionID uint   `json:"transaction_id"`
 }

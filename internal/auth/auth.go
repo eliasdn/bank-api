@@ -14,6 +14,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var (
+	usernameOrEmailAlreadyExistsErrorJSON = []byte(`{"error":"username or email already exists"}`)
+	failedToHashPasswordErrorJSON         = []byte(`{"error":"failed to hash password"}`)
+	failedToCreateUserErrorJSON           = []byte(`{"error":"failed to create user"}`)
+	invalidCredentialsErrorJSON           = []byte(`{"error":"invalid credentials"}`)
+	failedToGenerateTokenErrorJSON        = []byte(`{"error":"failed to generate token"}`)
+)
+
 type Handler struct {
 	DB        db.DBInterface
 	Config    *config.AppConfig
@@ -64,7 +72,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	// Check if user already exists
 	var existingUser models.User
 	if err := h.DB.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "username or email already exists"})
+		c.Data(http.StatusConflict, "application/json; charset=utf-8", usernameOrEmailAlreadyExistsErrorJSON)
 		return
 	}
 
@@ -78,13 +86,13 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	// Hash password with configurable cost
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), h.Config.Security.BcryptCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToHashPasswordErrorJSON)
 		return
 	}
 	user.PasswordHash = string(hashedPassword)
 
 	if err := h.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToCreateUserErrorJSON)
 		return
 	}
 
@@ -116,7 +124,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	bcryptErr := bcrypt.CompareHashAndPassword([]byte(targetHash), []byte(req.Password))
 
 	if err != nil || bcryptErr != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		c.Data(http.StatusUnauthorized, "application/json; charset=utf-8", invalidCredentialsErrorJSON)
 		return
 	}
 
@@ -130,7 +138,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 
 	tokenString, err := token.SignedString([]byte(h.Config.JWT.Secret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToGenerateTokenErrorJSON)
 		return
 	}
 

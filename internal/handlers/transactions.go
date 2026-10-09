@@ -366,7 +366,6 @@ func (h *Handler) Transfer(c *gin.Context) {
 
 	response := dto.TransferResponse{
 		Message:       "Transfer successful",
-		FromBalance:   fromAccount.Balance,
 		TransactionID: outgoingTx.ID,
 	}
 	c.JSON(http.StatusOK, response)

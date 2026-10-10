@@ -74,4 +74,6 @@ var (
 	failedToRecordIncomingTransactionErrorJSON = []byte(`{"error":"failed to record incoming transaction"}`)
 	transferFailedErrorJSON                    = []byte(`{"error":"transfer failed"}`)
 	failedToRetrieveTransactionsErrorJSON      = []byte(`{"error":"failed to retrieve transactions"}`)
+	userUpdatedSuccessfullyJSON                = []byte(`{"message":"User updated successfully"}`)
+	userDeletedSuccessfullyJSON                = []byte(`{"message":"User deleted successfully"}`)
 )

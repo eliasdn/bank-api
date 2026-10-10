@@ -176,3 +176,7 @@
 ## 2026-10-08 - [Pre-allocate JSON responses in user handler]
 **Learning:** Returning static error responses in the user handler using `c.JSON` combined with `gin.H` introduces overhead from dynamic map allocation, garbage collection, and JSON reflection on every request.
 **Action:** Identify static error responses in the user handler, define them as pre-allocated package-level `[]byte` variables in `utils.go`, and serve them directly using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to eliminate allocations.
+
+## 2026-10-10 - [Pre-allocate JSON responses in user handler for update/delete success]
+**Learning:** Returning static success responses in the user handler using `c.JSON` combined with `gin.H` introduces overhead from dynamic map allocation, garbage collection, and JSON reflection on every request.
+**Action:** Identify static success responses in the user handler, define them as pre-allocated package-level `[]byte` variables in `utils.go`, and serve them directly using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to eliminate allocations.

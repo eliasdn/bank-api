@@ -260,9 +260,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		c.Error(err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "User updated successfully",
-	})
+	c.Data(http.StatusOK, "application/json; charset=utf-8", userUpdatedSuccessfullyJSON)
 }
 
 func (h *Handler) DeleteUser(c *gin.Context) {
@@ -317,9 +315,7 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 		c.Error(err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "User deleted successfully",
-	})
+	c.Data(http.StatusOK, "application/json; charset=utf-8", userDeletedSuccessfullyJSON)
 }
 
 // validatePassword validates password complexity requirements

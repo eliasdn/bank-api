@@ -4,6 +4,7 @@ import (
 	"bank-api/internal/audit"
 	"bank-api/internal/models"
 	"bank-api/internal/validation"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -29,19 +30,16 @@ func (s *AuditService) LogAction(c *gin.Context, userID uint, action, resource, 
 	return s.logger.LogAction(userID, action, resource, resourceID, description, oldValue, newValue, ipAddress, userAgent)
 }
 
-// LogTransaction logs a financial transaction
+// LogTransaction logs a financial transaction asynchronously.
+// Avoids mutating gin.Context in background goroutines to prevent data races on recycled context objects.
 func (s *AuditService) LogTransaction(c *gin.Context, userID uint, transaction *models.Transaction, account *models.Account) error {
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
-	// Create a copy of context to safely use it in a goroutine
-	cCopy := c.Copy()
-
 	go func() {
 		if err := s.logger.LogTransaction(userID, transaction, account, ipAddress, userAgent); err != nil {
-			// Log error but don't fail the synchronous flow
-			// gin.DefaultErrorWriter is typically os.Stderr
-			cCopy.Error(err)
+			// Log error safely without mutating recycled gin.Context
+			log.Printf("[AUDIT ERROR] Failed to log transaction audit: %v", err)
 		}
 	}()
 

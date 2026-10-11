@@ -180,3 +180,7 @@
 ## 2026-10-10 - [Pre-allocate JSON responses in user handler for update/delete success]
 **Learning:** Returning static success responses in the user handler using `c.JSON` combined with `gin.H` introduces overhead from dynamic map allocation, garbage collection, and JSON reflection on every request.
 **Action:** Identify static success responses in the user handler, define them as pre-allocated package-level `[]byte` variables in `utils.go`, and serve them directly using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to eliminate allocations.
+
+## 2026-10-11 - Eliminate gin.H map allocations in JSON responses
+**Learning:** In hot paths that return dynamic JSON responses via `c.JSON`, using `gin.H` (which is an alias for `map[string]any`) introduces significant memory allocation and JSON reflection overhead. Benchmarks show that replacing `gin.H` map allocations with strictly defined structs reduces allocation overhead and improves serialization speed.
+**Action:** Replace `gin.H` map allocations with explicit structs (e.g., an `errorResponse` struct for errors, or defined DTO structs for complex responses) in hot paths to eliminate dynamic map allocation overhead during JSON serialization.

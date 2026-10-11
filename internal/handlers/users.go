@@ -12,6 +12,30 @@ import (
 	"gorm.io/gorm"
 )
 
+type UserResponse struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	FullName string `json:"fullName"`
+}
+
+type LoginResponse struct {
+	Token string       `json:"token"`
+	User  UserResponse `json:"user"`
+}
+
+type UserProfileResponse struct {
+	Username string `json:"username"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+}
+
+type TestUserResponse struct {
+	Username string `json:"username"`
+	FullName string `json:"full_name"`
+	Email    string `json:"email"`
+}
+
 type RegisterRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=50"`
 	Email    string `json:"email" binding:"required,email,max=100"`
@@ -27,14 +51,14 @@ type LoginRequest struct {
 func (h *Handler) RegisterUser(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
 	}
 
 	// Validate registration input
 	validator := validation.New()
 	if err := validator.ValidateUserRegistration(req.Username, req.Email, req.Password, req.FullName); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
 	}
 
@@ -70,18 +94,18 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		c.Error(err)
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"id":       user.ID,
-		"username": user.Username,
-		"email":    user.Email,
-		"fullName": user.FullName,
+	c.JSON(http.StatusCreated, UserResponse{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+		FullName: user.FullName,
 	})
 }
 
 func (h *Handler) LoginUser(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
 	}
 
@@ -116,13 +140,13 @@ func (h *Handler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"token": tokenString,
-		"user": gin.H{
-			"id":       user.ID,
-			"username": user.Username,
-			"email":    user.Email,
-			"fullName": user.FullName,
+	c.JSON(http.StatusOK, LoginResponse{
+		Token: tokenString,
+		User: UserResponse{
+			ID:       user.ID,
+			Username: user.Username,
+			Email:    user.Email,
+			FullName: user.FullName,
 		},
 	})
 }
@@ -151,10 +175,10 @@ func (h *Handler) GetUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"username": user.Username,
-		"name":     user.FullName,
-		"email":    user.Email,
+	c.JSON(http.StatusOK, UserProfileResponse{
+		Username: user.Username,
+		Name:     user.FullName,
+		Email:    user.Email,
 	})
 }
 
@@ -176,10 +200,10 @@ func (h *Handler) handleTestUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"username":  user.Username,
-		"full_name": user.FullName,
-		"email":     user.Email,
+	c.JSON(http.StatusOK, TestUserResponse{
+		Username: user.Username,
+		FullName: user.FullName,
+		Email:    user.Email,
 	})
 }
 
@@ -220,7 +244,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	validator := validation.New()
 	if updateData.FullName != nil {
 		if err := validator.ValidateFullName(*updateData.FullName); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 			return
 		}
 		user.FullName = *updateData.FullName

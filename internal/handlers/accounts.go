@@ -43,6 +43,22 @@ func generateAccountNumber() string {
 	return string(b)
 }
 
+type PaginationInfo struct {
+	Page       int   `json:"page"`
+	Limit      int   `json:"limit"`
+	Total      int64 `json:"total"`
+	TotalPages int   `json:"totalPages"`
+}
+
+type AccountListResponse struct {
+	Data       []models.Account `json:"data"`
+	Pagination PaginationInfo   `json:"pagination"`
+}
+
+type AccountResponse struct {
+	Data models.Account `json:"data"`
+}
+
 type CreateAccountRequest struct {
 	AccountType string `json:"account_type" binding:"omitempty,max=20"`
 }
@@ -95,13 +111,13 @@ func (h *Handler) GetAccounts(c *gin.Context) {
 	// Calculate pagination metadata
 	totalPages := int((total + int64(limit) - 1) / int64(limit))
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": accounts,
-		"pagination": gin.H{
-			"page":       page,
-			"limit":      limit,
-			"total":      total,
-			"totalPages": totalPages,
+	c.JSON(http.StatusOK, AccountListResponse{
+		Data: accounts,
+		Pagination: PaginationInfo{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
 		},
 	})
 }
@@ -127,7 +143,7 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 
 	validator := validation.New()
 	if err := validator.ValidateAccountType(accountType); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
 	}
 
@@ -151,7 +167,9 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 		c.Error(err)
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"data": account})
+	c.JSON(http.StatusCreated, struct {
+		Data models.Account `json:"data"`
+	}{Data: account})
 }
 
 func (h *Handler) GetAccount(c *gin.Context) {
@@ -178,5 +196,7 @@ func (h *Handler) GetAccount(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": account})
+	c.JSON(http.StatusOK, struct {
+		Data models.Account `json:"data"`
+	}{Data: account})
 }

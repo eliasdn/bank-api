@@ -77,3 +77,8 @@ var (
 	userUpdatedSuccessfullyJSON                = []byte(`{"message":"User updated successfully"}`)
 	userDeletedSuccessfullyJSON                = []byte(`{"message":"User deleted successfully"}`)
 )
+
+// errorResponse provides a zero-allocation schema for dynamic error messages.
+type errorResponse struct {
+	Error string `json:"error"`
+}

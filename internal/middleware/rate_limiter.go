@@ -196,27 +196,42 @@ func (rl *RateLimiter) StopCleanup() {
 	}
 }
 
+// RateLimitInfo contains specific rate limit details
+type RateLimitInfo struct {
+	Limit     int   `json:"limit"`
+	Remaining int   `json:"remaining"`
+	Reset     int64 `json:"reset"`
+}
+
+// RateLimitStatusResponse represents the current rate limit status
+type RateLimitStatusResponse struct {
+	IP        string         `json:"ip"`
+	IPLimit   RateLimitInfo  `json:"ip_limit"`
+	UserID    interface{}    `json:"user_id,omitempty"`
+	UserLimit *RateLimitInfo `json:"user_limit,omitempty"`
+}
+
 // GetRateLimitStatus returns the current rate limit status for debugging
-func (rl *RateLimiter) GetRateLimitStatus(c *gin.Context) gin.H {
+func (rl *RateLimiter) GetRateLimitStatus(c *gin.Context) RateLimitStatusResponse {
 	clientIP := GetClientIP(c)
 	ipLimiter := rl.LimitByIP(clientIP)
 
-	status := gin.H{
-		"ip": clientIP,
-		"ip_limit": gin.H{
-			"limit":     100,
-			"remaining": int(ipLimiter.Tokens()),
-			"reset":     time.Now().Add(time.Minute).Unix(),
+	status := RateLimitStatusResponse{
+		IP: clientIP,
+		IPLimit: RateLimitInfo{
+			Limit:     100,
+			Remaining: int(ipLimiter.Tokens()),
+			Reset:     time.Now().Add(time.Minute).Unix(),
 		},
 	}
 
 	if userID, exists := c.Get("userID"); exists {
 		userLimiter := rl.LimitByUser(userID)
-		status["user_id"] = userID
-		status["user_limit"] = gin.H{
-			"limit":     1000,
-			"remaining": int(userLimiter.Tokens()),
-			"reset":     time.Now().Add(time.Hour).Unix(),
+		status.UserID = userID
+		status.UserLimit = &RateLimitInfo{
+			Limit:     1000,
+			Remaining: int(userLimiter.Tokens()),
+			Reset:     time.Now().Add(time.Hour).Unix(),
 		}
 	}
 

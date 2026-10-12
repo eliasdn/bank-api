@@ -19,8 +19,22 @@ type Error struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// ErrorResponseData represents the inner error details
+type ErrorResponseData struct {
+	Code      string `json:"code"`
+	Message   string `json:"message"`
+	RequestID string `json:"request_id"`
+	Timestamp string `json:"timestamp"`
+	Details   any    `json:"details,omitempty"`
+}
+
+// ErrorResponseWrapper represents the standardized error response wrapper
+type ErrorResponseWrapper struct {
+	Error ErrorResponseData `json:"error"`
+}
+
 // Response converts Error to a standardized response format
-func (e *Error) Response(c *gin.Context) gin.H {
+func (e *Error) Response(c *gin.Context) ErrorResponseWrapper {
 	reqID := ""
 	if c != nil {
 		if val, exists := c.Get("request_id"); exists {
@@ -28,13 +42,13 @@ func (e *Error) Response(c *gin.Context) gin.H {
 		}
 	}
 
-	return gin.H{
-		"error": gin.H{
-			"code":       e.Code,
-			"message":    e.Message,
-			"request_id": reqID,
-			"timestamp":  time.Now().UTC().Format(time.RFC3339),
-			"details":    e.Details,
+	return ErrorResponseWrapper{
+		Error: ErrorResponseData{
+			Code:      e.Code,
+			Message:   e.Message,
+			RequestID: reqID,
+			Timestamp: time.Now().UTC().Format(time.RFC3339),
+			Details:   e.Details,
 		},
 	}
 }

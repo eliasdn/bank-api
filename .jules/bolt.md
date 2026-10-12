@@ -187,3 +187,11 @@
 ## 2026-10-11 - Eliminate gin.H map allocations in auth handlers
 **Learning:** In hot paths that return dynamic JSON responses via `c.JSON`, using `gin.H` (which is an alias for `map[string]any`) introduces significant memory allocation and JSON reflection overhead. Benchmarks show that replacing `gin.H` map allocations with strictly defined structs reduces allocation overhead and improves serialization speed. This is particularly relevant in authentication endpoints like `RegisterUser` and `LoginUser` where security and performance are critical.
 **Action:** Replace `gin.H` map allocations with explicitly typed anonymous structs in `RegisterUser` and `LoginUser` within `internal/auth/auth.go` to eliminate dynamic map allocation overhead during JSON serialization.
+
+## 2026-10-12 - Eliminate gin.H map allocations in error_handler.go
+**Learning:** In hot paths that frequently return static or dynamic JSON responses (like the centralized error handler under heavy load), using  with dynamic map allocations () introduces significant overhead from memory allocation, garbage collection, and JSON reflection.
+**Action:** Replace  map allocations with explicit structs (e.g., an  struct) in hot paths to eliminate dynamic map allocation overhead during JSON serialization.
+
+## 2026-10-12 - Eliminate gin.H map allocations in error_handler.go
+**Learning:** In hot paths that frequently return static or dynamic JSON responses (like the centralized error handler under heavy load), using `c.JSON` with dynamic map allocations (`gin.H`) introduces significant overhead from memory allocation, garbage collection, and JSON reflection.
+**Action:** Replace `gin.H` map allocations with explicit structs (e.g., an `ErrorResponseWrapper` struct) in hot paths to eliminate dynamic map allocation overhead during JSON serialization.

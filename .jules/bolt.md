@@ -195,3 +195,6 @@
 ## 2026-10-12 - Eliminate gin.H map allocations in error_handler.go
 **Learning:** In hot paths that frequently return static or dynamic JSON responses (like the centralized error handler under heavy load), using `c.JSON` with dynamic map allocations (`gin.H`) introduces significant overhead from memory allocation, garbage collection, and JSON reflection.
 **Action:** Replace `gin.H` map allocations with explicit structs (e.g., an `ErrorResponseWrapper` struct) in hot paths to eliminate dynamic map allocation overhead during JSON serialization.
+## 2024-10-12 - Prevent Slice Re-allocation during DB queries
+**Learning:** GORM's `Find` method appends fetched rows to the provided slice. If a nil or unallocated slice `var items []Model` is provided, GORM (or Go's `append`) must perform multiple intermediate array re-allocations and data copies as the slice grows dynamically to accommodate the results. By pre-allocating the slice with the expected capacity based on the pagination `limit` using `make([]Model, 0, limit)`, we eliminate these intermediate heap allocations and copy overheads entirely, improving memory efficiency and performance in read-heavy endpoints.
+**Action:** Always pre-allocate slices meant to receive database results using `make([]Model, 0, expectedCapacity)` when the maximum size (e.g., from a pagination limit) is known in advance.

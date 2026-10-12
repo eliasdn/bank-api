@@ -92,7 +92,8 @@ func (h *Handler) GetAccounts(c *gin.Context) {
 	}
 
 	// Get paginated accounts
-	var accounts []models.Account
+	// Pre-allocate slice with expected capacity to prevent intermediate array re-allocations
+	accounts := make([]models.Account, 0, limit)
 	if int64(offset) < total {
 		if err := h.DB.Where("user_id = ?", userID).
 			Order("created_at desc").

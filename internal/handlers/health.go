@@ -117,9 +117,6 @@ func (h *HealthHandler) checkDatabase() HealthCheck {
 	return HealthCheck{
 		Status:  "healthy",
 		Message: "Database is responsive",
-		Data: map[string]interface{}{
-			"driver": "sqlite",
-		},
 	}
 }
 

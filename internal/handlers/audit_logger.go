@@ -78,7 +78,13 @@ func (a *AuditLogger) LogUserAction(c *gin.Context, action string, userID uint, 
 
 // GetAuditLogs retrieves audit logs for an account
 func (a *AuditLogger) GetAuditLogs(accountID uint, limit int) ([]AuditLog, error) {
-	var logs []AuditLog
+	// Optimization: Pre-allocate slice with expected capacity to prevent intermediate array re-allocations
+	// Ensure limit > 0 to prevent panic in make()
+	allocLimit := limit
+	if allocLimit <= 0 {
+		allocLimit = 1 // Default small capacity if limit is invalid or -1 (no limit)
+	}
+	logs := make([]AuditLog, 0, allocLimit)
 	err := a.db.Where("account_id = ?", accountID).
 		Order("created_at desc").
 		Limit(limit).

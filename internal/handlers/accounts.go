@@ -32,7 +32,7 @@ func generateAccountNumber() string {
 
 	n := int(val % 1000000)
 
-	b := make([]byte, 9)
+	var b [9]byte
 	b[0] = 'A'
 	b[1] = 'C'
 	b[2] = 'C'
@@ -40,7 +40,7 @@ func generateAccountNumber() string {
 		b[i] = byte(n%10) + '0'
 		n /= 10
 	}
-	return string(b)
+	return string(b[:])
 }
 
 type PaginationInfo struct {

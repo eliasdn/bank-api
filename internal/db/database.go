@@ -188,7 +188,8 @@ func (d *Database) GetAccountByID(id uint) (*models.Account, error) {
 }
 
 func (d *Database) GetAccountsByUserID(userID uint) ([]models.Account, error) {
-	var accounts []models.Account
+	// Optimization: Pre-allocate slice with expected small capacity to prevent intermediate array re-allocations
+	accounts := make([]models.Account, 0, 4)
 	err := d.DB.Where("user_id = ?", userID).Find(&accounts).Error
 	if err != nil {
 		return nil, err
@@ -230,7 +231,8 @@ func (d *Database) GetTransactionByID(id uint) (*models.Transaction, error) {
 }
 
 func (d *Database) GetTransactionsByAccountID(accountID uint) ([]models.Transaction, error) {
-	var transactions []models.Transaction
+	// Optimization: Pre-allocate slice with expected capacity to prevent intermediate array re-allocations
+	transactions := make([]models.Transaction, 0, 20)
 	err := d.DB.Where("account_id = ?", accountID).
 		Order("created_at DESC").
 		Find(&transactions).Error
@@ -241,7 +243,8 @@ func (d *Database) GetTransactionsByAccountID(accountID uint) ([]models.Transact
 }
 
 func (d *Database) GetTransactionsByUserID(userID uint) ([]models.Transaction, error) {
-	var transactions []models.Transaction
+	// Optimization: Pre-allocate slice with expected capacity to prevent intermediate array re-allocations
+	transactions := make([]models.Transaction, 0, 20)
 	err := d.DB.Joins("JOIN accounts ON transactions.account_id = accounts.id").
 		Where("accounts.user_id = ?", userID).
 		Order("transactions.created_at DESC").

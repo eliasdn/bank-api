@@ -201,3 +201,7 @@
 ## 2026-10-15 - Prevent slice escaping to heap in generateAccountNumber
 **Learning:** `generateAccountNumber` in `internal/handlers/accounts.go` dynamically allocated a `[]byte` of length 9 on the heap using `make([]byte, 9)`. Because this is returned as a string, the byte slice escapes to the heap. By replacing it with a fixed-size stack array `var b [9]byte` and returning it sliced as `string(b[:])`, we completely avoid heap allocations and reduce garbage collection overhead on account creation.
 **Action:** In Go, when constructing small strings character-by-character in hot paths, use fixed-size stack arrays (e.g., `var b [N]byte`) and cast via `string(b[:])` instead of dynamically allocating slices with `make([]byte, N)` to prevent the byte slice from escaping to the heap.
+
+## 2024-05-24 - [Pre-allocate GORM find slices]
+**Learning:** In GORM queries with `.Find(&dest)`, dynamically growing the destination slice causes intermediate heap re-allocations and data copying.
+**Action:** When fetching multiple records or paginated results, always pre-allocate the destination slice using `make([]Model, 0, capacity)` to improve memory efficiency and performance.

@@ -416,7 +416,11 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 
 	// Get paginated transactions
 	// Pre-allocate slice with expected capacity to prevent intermediate array re-allocations
-	transactions := make([]models.Transaction, 0, limit)
+	allocLimit := limit
+	if allocLimit <= 0 {
+		allocLimit = 1
+	}
+	transactions := make([]models.Transaction, 0, allocLimit)
 	if int64(offset) < total {
 		if err := h.DB.Where("account_id = ?", account.ID).
 			Order("created_at desc").

@@ -205,3 +205,6 @@
 ## 2024-05-24 - [Pre-allocate GORM find slices]
 **Learning:** In GORM queries with `.Find(&dest)`, dynamically growing the destination slice causes intermediate heap re-allocations and data copying.
 **Action:** When fetching multiple records or paginated results, always pre-allocate the destination slice using `make([]Model, 0, capacity)` to improve memory efficiency and performance.
+## 2026-10-15 - Prevent panic in make() with invalid limits
+**Learning:** When pre-allocating slices using `make([]Type, 0, limit)` (like `accounts` and `transactions`), passing a non-positive `limit` (e.g., `-1` for unlimited or `0`) causes a runtime panic.
+**Action:** Always ensure the capacity passed to `make()` is strictly greater than `0`. If the `limit` can be `<= 0`, cap it to a safe minimum capacity (e.g., `allocLimit = 1`) prior to allocation.

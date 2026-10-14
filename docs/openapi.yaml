@@ -744,10 +744,12 @@ components:
       properties:
         username:
           type: string
+          minLength: 3
           maxLength: 50
           example: johndoe
         password:
           type: string
+          minLength: 8
           maxLength: 100
           example: SecurePass123!
     CreateAccountRequest:

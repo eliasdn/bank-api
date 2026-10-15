@@ -81,6 +81,42 @@ func (suite *UsersUnitTestSuite) TestRegisterUser_ValidationFailure() {
 	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 
+func (suite *UsersUnitTestSuite) TestUpdateUser_CRLFInjectionRejected() {
+	testUser := &models.User{
+		Model:    gorm.Model{ID: 1},
+		Username: "testuser",
+		FullName: "Old Name",
+		Email:    "old@example.com",
+	}
+	suite.db.Create(testUser)
+
+	// Test newline injection
+	updateReqNewline := map[string]string{
+		"fullName": "New\nName",
+	}
+	body, _ := json.Marshal(updateReqNewline)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/users/me", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	// Test carriage return injection
+	updateReqCarriageReturn := map[string]string{
+		"fullName": "New\rName",
+	}
+	body, _ = json.Marshal(updateReqCarriageReturn)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("PUT", "/users/me", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
 func (suite *UsersUnitTestSuite) TestGetUser_Success() {
 	// Create a test user
 	testUser := &models.User{

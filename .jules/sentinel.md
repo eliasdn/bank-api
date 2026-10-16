@@ -126,3 +126,8 @@
 **Vulnerability:** GO-2022-0535 (CVE-2020-0601) is a legacy Windows x509 certificate validation bypass in the Go standard library (`crypto/x509`) fixed in Go versions 1.12.16 and 1.13.7. Automated vulnerability scanners flagged this historic finding against dependencies.
 **Learning:** Modern Go application environments using Go 1.26.x runtimes are inherently patched against legacy standard library vulnerabilities like GO-2022-0535, as verified by `govulncheck` reporting zero symbol or package vulnerabilities.
 **Prevention:** Ensure the application toolchain and `go.mod` declare a modern, fully patched Go version (e.g. Go 1.26.x+) and perform periodic `govulncheck` scans to confirm zero symbol or package exposure.
+
+## 2026-10-16 - Null-Byte and Control Character Input Validation Bypass in Login Route
+**Vulnerability:** The login handler (`LoginUser`) relied on JSON binding struct tags without validating username or password strings against control characters, line breaks (`\r`, `\n`), or null bytes (`\x00`). Null bytes in SQLite query parameters via CGO bindings truncate input strings, allowing attackers to bypass exact username matching (e.g. `user\x00injected` querying `user`), while null bytes in login passwords cause bcrypt truncation.
+**Learning:** JSON binding tags enforce basic string length bounds, but fail to detect null bytes or control characters that alter underlying database C-string representations or password hashing libraries.
+**Prevention:** Always perform explicit input validation with manual byte checks on authentication parameters in login endpoints to reject null bytes, carriage returns, and newlines before executing ORM/SQL queries or bcrypt comparisons.

@@ -381,6 +381,36 @@ func (suite *UsersUnitTestSuite) TestLoginUser_OversizedInputRejected() {
 	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
 }
 
+func (suite *UsersUnitTestSuite) TestLoginUser_NullByteAndControlCharRejected() {
+	// Test login with username containing invalid characters / null bytes
+	invalidUsernameReq := map[string]string{
+		"username": "user\x00injected",
+		"password": "Password123!",
+	}
+	body, _ := json.Marshal(invalidUsernameReq)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	// Test login with password containing null bytes / control characters
+	invalidPasswordReq := map[string]string{
+		"username": "validuser",
+		"password": "Password123!\x00extra",
+	}
+	body, _ = json.Marshal(invalidPasswordReq)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/login", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	suite.router.ServeHTTP(w, req)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+}
+
 func TestUsersUnitSuite(t *testing.T) {
 	suite.Run(t, new(UsersUnitTestSuite))
 }

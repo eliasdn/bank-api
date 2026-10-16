@@ -109,6 +109,20 @@ func (h *Handler) LoginUser(c *gin.Context) {
 		return
 	}
 
+	// Validate username and password against control characters, line breaks, and null bytes to prevent injection/truncation
+	validator := validation.New()
+	if err := validator.ValidateUsername(req.Username); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		return
+	}
+	for i := 0; i < len(req.Password); i++ {
+		ch := req.Password[i]
+		if ch == 0 || ch == '\r' || ch == '\n' {
+			c.JSON(http.StatusBadRequest, errorResponse{Error: "password cannot contain null bytes or line breaks"})
+			return
+		}
+	}
+
 	var user models.User
 	err := h.DB.Where("username = ?", req.Username).First(&user).Error
 

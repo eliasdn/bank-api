@@ -208,3 +208,7 @@
 ## 2026-10-15 - Prevent panic in make() with invalid limits
 **Learning:** When pre-allocating slices using `make([]Type, 0, limit)` (like `accounts` and `transactions`), passing a non-positive `limit` (e.g., `-1` for unlimited or `0`) causes a runtime panic.
 **Action:** Always ensure the capacity passed to `make()` is strictly greater than `0`. If the `limit` can be `<= 0`, cap it to a safe minimum capacity (e.g., `allocLimit = 1`) prior to allocation.
+
+## 2026-10-17 - Pre-allocate static error JSON responses in users handler
+**Learning:** Returning static error responses (like validation errors for password format) using `c.JSON` paired with an explicit struct or `gin.H` introduces overhead from JSON serialization and garbage collection on every request.
+**Action:** When a static error response is identified in a handler, define it as a pre-allocated package-level `[]byte` variable in `utils.go`, and serve it directly using `c.Data(status, "application/json; charset=utf-8", preallocatedBytes)` to eliminate serialization allocations.

@@ -118,7 +118,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	for i := 0; i < len(req.Password); i++ {
 		ch := req.Password[i]
 		if ch == 0 || ch == '\r' || ch == '\n' {
-			c.JSON(http.StatusBadRequest, errorResponse{Error: "password cannot contain null bytes or line breaks"})
+			c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidPasswordFormatErrorJSON)
 			return
 		}
 	}

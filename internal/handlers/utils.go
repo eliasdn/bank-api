@@ -46,6 +46,7 @@ var (
 	invalidCredentialsErrorJSON            = []byte(`{"error":"invalid credentials"}`)
 	invalidEmailFormatErrorJSON            = []byte(`{"error":"invalid email format"}`)
 	invalidUserIDErrorJSON                 = []byte(`{"error":"invalid user ID"}`)
+	invalidPasswordFormatErrorJSON         = []byte(`{"error":"password cannot contain null bytes or line breaks"}`)
 	userNotFoundErrorJSON                  = []byte(`{"error":"user not found"}`)
 	usernameOrEmailAlreadyExistsErrorJSON  = []byte(`{"error":"username or email already exists"}`)
 

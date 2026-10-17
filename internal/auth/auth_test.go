@@ -72,3 +72,59 @@ func TestRegisterUser_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "new@example.com", user.Email)
 }
+
+func TestLoginUser_NullByteAndControlCharRejection(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	database := setupTestDB()
+	cfg := config.LoadTestConfig()
+
+	handler := &Handler{
+		DB:     database,
+		Config: cfg,
+	}
+
+	router := gin.Default()
+	router.POST("/login", handler.LoginUser)
+
+	testCases := []struct {
+		name     string
+		username string
+		password string
+	}{
+		{
+			name:     "Null byte in username",
+			username: "admin\x00user",
+			password: "ValidPassword123!",
+		},
+		{
+			name:     "Newline in username",
+			username: "admin\nuser",
+			password: "ValidPassword123!",
+		},
+		{
+			name:     "Null byte in password",
+			username: "validuser",
+			password: "Password123!\x00injected",
+		},
+		{
+			name:     "Carriage return in password",
+			username: "validuser",
+			password: "Password123!\rinjected",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			reqBody, _ := json.Marshal(LoginRequest{
+				Username: tc.username,
+				Password: tc.password,
+			})
+			req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(reqBody))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+	}
+}

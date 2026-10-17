@@ -20,6 +20,7 @@ var (
 	failedToCreateUserErrorJSON           = []byte(`{"error":"failed to create user"}`)
 	invalidCredentialsErrorJSON           = []byte(`{"error":"invalid credentials"}`)
 	failedToGenerateTokenErrorJSON        = []byte(`{"error":"failed to generate token"}`)
+	invalidPasswordFormatErrorJSON        = []byte(`{"error":"password cannot contain null bytes or line breaks"}`)
 )
 
 type Handler struct {
@@ -120,6 +121,22 @@ func (h *Handler) LoginUser(c *gin.Context) {
 			Error string `json:"error"`
 		}{Error: err.Error()})
 		return
+	}
+
+	// Validate username and password against control characters, line breaks, and null bytes to prevent injection/truncation
+	validator := validation.New()
+	if err := validator.ValidateUsername(req.Username); err != nil {
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
+		return
+	}
+	for i := 0; i < len(req.Password); i++ {
+		ch := req.Password[i]
+		if ch == 0 || ch == '\r' || ch == '\n' {
+			c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidPasswordFormatErrorJSON)
+			return
+		}
 	}
 
 	var user models.User

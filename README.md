@@ -264,6 +264,7 @@ rm bank_test.db
 - Input validation and sanitization
 - SQL injection prevention (ORM usage)
 - XSS protection
+- X-Download-Options header (noopen)
 
 ## 🚀 Deployment
 

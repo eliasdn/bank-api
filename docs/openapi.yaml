@@ -37,6 +37,10 @@ info:
     included in response headers:
 
     - `Retry-After`: Time in seconds to wait before making a new request
+
+    ## Security Headers
+
+    The API includes standard HTTP security headers such as `X-Download-Options: noopen` to guard against common web vulnerabilities.
   version: 1.0.0
   contact:
     name: Bank API Support

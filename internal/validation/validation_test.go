@@ -81,6 +81,9 @@ func TestValidatePassword(t *testing.T) {
 		wantErr  bool
 	}{
 		{"valid password", "Password123!", false},
+		{"valid password with hyphen and underscore", "Password123-_", false},
+		{"valid password with plus and equal", "Password123+=", false},
+		{"valid password with tilde and brackets", "Password123~[]", false},
 		{"too short", "Pass1!", true},
 		{"no uppercase", "password123!", true},
 		{"no lowercase", "PASSWORD123!", true},

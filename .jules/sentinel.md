@@ -131,3 +131,8 @@
 **Vulnerability:** The login handler (`LoginUser`) relied on JSON binding struct tags without validating username or password strings against control characters, line breaks (`\r`, `\n`), or null bytes (`\x00`). Null bytes in SQLite query parameters via CGO bindings truncate input strings, allowing attackers to bypass exact username matching (e.g. `user\x00injected` querying `user`), while null bytes in login passwords cause bcrypt truncation.
 **Learning:** JSON binding tags enforce basic string length bounds, but fail to detect null bytes or control characters that alter underlying database C-string representations or password hashing libraries.
 **Prevention:** Always perform explicit input validation with manual byte checks on authentication parameters in login endpoints to reject null bytes, carriage returns, and newlines before executing ORM/SQL queries or bcrypt comparisons.
+
+## 2026-10-18 - Remediating Standard Library Vulnerability GO-2026-6609
+**Vulnerability:** GO-2026-6609 flags potential excessive CPU consumption when parsing HTTP `Range` headers containing a large number of ranges in `net/http` static file functions (`FileServer`, `ServeContent`, `ServeFile`).
+**Learning:** Standard library vulnerability findings reported by static dependency scanners require updating the Go runtime directive and toolchain in `go.mod`. Pure REST JSON APIs that do not invoke `net/http` file-serving functions do not execute range parsing, but declaring the patched Go toolchain version in `go.mod` ensures the application is built with the remediated standard library.
+**Prevention:** Update `go.mod` with the explicit patched `toolchain` version (e.g., `toolchain go1.26.9`) to ensure builds use the patched standard library release.

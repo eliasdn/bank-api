@@ -93,7 +93,7 @@ def parse_govulncheck(govulncheck_file):
 
     osv_map = {}
     for entry in entries:
-        if "osv" in entry and isinstance(entry["osv"], dict):
+        if isinstance(entry, dict) and "osv" in entry and isinstance(entry["osv"], dict):
             osv_obj = entry["osv"]
             if "id" in osv_obj:
                 osv_map[osv_obj["id"]] = osv_obj
@@ -107,7 +107,7 @@ def parse_govulncheck(govulncheck_file):
     # Findings with trace length 1 only indicate required/imported modules not called by user code.
     called_findings = []
     for entry in entries:
-        if "finding" in entry and isinstance(entry["finding"], dict):
+        if isinstance(entry, dict) and "finding" in entry and isinstance(entry["finding"], dict):
             finding = entry["finding"]
             trace = finding.get("trace", [])
             # A trace indicating an actual call or package import affecting user code

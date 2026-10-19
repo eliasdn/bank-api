@@ -143,7 +143,8 @@ func (v *Validator) ValidatePassword(password string) error {
 			hasLower = true
 		case c >= '0' && c <= '9':
 			hasNumber = true
-		case c == '!' || c == '@' || c == '#' || c == '$' || c == '%' || c == '^' || c == '&' || c == '*' || c == '(' || c == ')' || c == ',' || c == '.' || c == '?' || c == '"' || c == ':' || c == '{' || c == '}' || c == '|' || c == '<' || c == '>':
+		case c >= 33 && c <= 126:
+			// Accepts all printable ASCII special characters (ASCII 33-126 non-alphanumeric) per OWASP guidelines
 			hasSpecial = true
 		}
 	}

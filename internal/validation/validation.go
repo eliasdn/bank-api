@@ -51,14 +51,16 @@ func (v *Validator) ValidateUsername(username string) error {
 	}
 
 	// Validate using a manual byte loop to avoid regex overhead in hot paths
+	// Optimization: Fast path evaluates common valid characters first to avoid unnecessary edge case checks (null bytes/newlines) on every iteration.
 	for i := 0; i < len(username); i++ {
 		c := username[i]
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-' {
+			continue
+		}
 		if c == 0 || c == '\r' || c == '\n' {
 			return errors.NewValidationError("username cannot contain null bytes or line breaks")
 		}
-		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-') {
-			return errors.NewValidationError("username can only contain letters, numbers, underscores, and hyphens")
-		}
+		return errors.NewValidationError("username can only contain letters, numbers, underscores, and hyphens")
 	}
 	return nil
 }
@@ -73,20 +75,22 @@ func (v *Validator) ValidateEmail(email string) error {
 	}
 
 	// Fast path manual email validation
-	// Optimization: Merged null byte check with the first username validation loop and replaced strings.IndexByte with manual search to avoid function call overhead and multiple string iterations.
+	// Optimization: Merged null byte check and replaced strings.IndexByte with manual search to avoid function call overhead and multiple string iterations.
 	atIndex := -1
+	// Optimization: Fast path evaluates common valid characters first to avoid unnecessary edge case checks (null bytes/newlines) on every iteration.
 	for i := 0; i < len(email); i++ {
 		c := email[i]
-		if c == 0 || c == '\r' || c == '\n' {
-			return errors.NewValidationError("email cannot contain null bytes or line breaks")
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '%' || c == '+' || c == '-' {
+			continue
 		}
 		if c == '@' {
 			atIndex = i
 			break
 		}
-		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '%' || c == '+' || c == '-') {
-			return errors.NewValidationError("invalid email format")
+		if c == 0 || c == '\r' || c == '\n' {
+			return errors.NewValidationError("email cannot contain null bytes or line breaks")
 		}
+		return errors.NewValidationError("invalid email format")
 	}
 
 	if atIndex <= 0 || atIndex == len(email)-1 {

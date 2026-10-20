@@ -215,3 +215,6 @@
 ## 2026-10-19 - String Validation Fast Paths
 **Learning:** In manual byte loops for string validation (like `ValidateUsername` and `ValidateEmail`), evaluating rare edge cases like null-bytes (`\x00`) or newlines (`\n`) on every single valid character introduces unnecessary branch evaluations and slows down the loop.
 **Action:** Restructure validation loops to evaluate the most common case (valid alphanumeric characters) first and short-circuit via `continue`. This leverages branch prediction and skips evaluating the invalid edge cases for valid characters, yielding significant speedups (~40% to ~65% in benchmarks).
+## 2026-10-21 - [Fast manual byte loop for FormatInt]
+**Learning:** `strconv.FormatInt` dynamically converts int64 to strings and causes function call overheads in hot paths like the rate limiter `normalizeUserID`.
+**Action:** Implement `validation.FormatInt` as a highly optimized manual byte loop and replace usages of `strconv.FormatInt` in high-throughput hot paths. It avoids standard library overhead. `validation.FormatInt` explicitly handles signs without unsafe generic casting to prevent underflow bugs.

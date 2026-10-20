@@ -21,6 +21,34 @@ func FormatUint(u uint64) string {
 	return string(b[i:])
 }
 
+// FormatInt is a highly optimized manual byte loop for formatting int64.
+// It avoids function call overhead and is faster for simple decimal conversions in hot paths.
+func FormatInt(i int64) string {
+	if i == 0 {
+		return "0"
+	}
+	isNegative := i < 0
+	u := uint64(i)
+	if isNegative {
+		u = -u
+	}
+	var b [20]byte
+	idx := 20
+	for u >= 10 {
+		q := u / 10
+		idx--
+		b[idx] = byte('0' + (u - q*10)) // #nosec G115
+		u = q
+	}
+	idx--
+	b[idx] = byte('0' + u) // #nosec G115
+	if isNegative {
+		idx--
+		b[idx] = '-'
+	}
+	return string(b[idx:])
+}
+
 const maxUint64 = 1<<64 - 1
 const cutoff = maxUint64 / 10
 

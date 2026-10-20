@@ -39,12 +39,16 @@ func (h *Handler) Deposit(c *gin.Context) {
 
 	validator := validation.New()
 	if err := validator.ValidateAmount(deposit.Amount); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 
 	if err := h.LimitService.CheckLimit(account.ID, deposit.Amount, "deposit"); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 
@@ -141,12 +145,16 @@ func (h *Handler) Withdraw(c *gin.Context) {
 
 	validator := validation.New()
 	if err := validator.ValidateAmount(withdrawal.Amount); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 
 	if err := h.LimitService.CheckLimit(account.ID, withdrawal.Amount, "withdrawal"); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 
@@ -253,12 +261,16 @@ func (h *Handler) Transfer(c *gin.Context) {
 
 	validator := validation.New()
 	if err := validator.ValidateTransfer(fromAccount.ID, transfer.ToAccountID, transfer.Amount, transfer.Description); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 
 	if err := h.LimitService.CheckLimit(fromAccount.ID, transfer.Amount, "transfer"); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 

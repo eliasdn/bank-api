@@ -51,14 +51,18 @@ type LoginRequest struct {
 func (h *Handler) RegisterUser(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 
 	// Validate registration input
 	validator := validation.New()
 	if err := validator.ValidateUserRegistration(req.Username, req.Email, req.Password, req.FullName); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 
@@ -105,14 +109,18 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 func (h *Handler) LoginUser(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 
 	// Validate username and password against control characters, line breaks, and null bytes to prevent injection/truncation
 	validator := validation.New()
 	if err := validator.ValidateUsername(req.Username); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, struct {
+			Error string `json:"error"`
+		}{Error: err.Error()})
 		return
 	}
 	for i := 0; i < len(req.Password); i++ {
@@ -258,7 +266,9 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 	validator := validation.New()
 	if updateData.FullName != nil {
 		if err := validator.ValidateFullName(*updateData.FullName); err != nil {
-			c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+			c.JSON(http.StatusBadRequest, struct {
+				Error string `json:"error"`
+			}{Error: err.Error()})
 			return
 		}
 		user.FullName = *updateData.FullName

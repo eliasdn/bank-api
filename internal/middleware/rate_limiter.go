@@ -5,7 +5,6 @@ import (
 	"bank-api/internal/validation"
 
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -80,9 +79,9 @@ func normalizeUserID(userID interface{}) string {
 	case uint64:
 		return validation.FormatUint(v)
 	case int:
-		return strconv.FormatInt(int64(v), 10)
+		return validation.FormatInt(int64(v))
 	case int64:
-		return strconv.FormatInt(v, 10)
+		return validation.FormatInt(v)
 	case float64:
 		return validation.FormatUint(uint64(v))
 	case string:

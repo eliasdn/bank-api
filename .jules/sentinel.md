@@ -136,3 +136,8 @@
 **Vulnerability:** GO-2026-6609 flags potential excessive CPU consumption when parsing HTTP `Range` headers containing a large number of ranges in `net/http` static file functions (`FileServer`, `ServeContent`, `ServeFile`).
 **Learning:** Standard library vulnerability findings reported by static dependency scanners require updating the Go runtime directive and toolchain in `go.mod`. Pure REST JSON APIs that do not invoke `net/http` file-serving functions do not execute range parsing, but declaring the patched Go toolchain version in `go.mod` ensures the application is built with the remediated standard library.
 **Prevention:** Update `go.mod` with the explicit patched `toolchain` version (e.g., `toolchain go1.26.9`) to ensure builds use the patched standard library release.
+
+## 2026-10-20 - Permanent Transaction Limit Denial-of-Service via Unreset Monthly Usage
+**Vulnerability:** In `TransactionLimitService.resetUsageIfNeeded`, mutating `limit.LastResetDate` during the daily reset check caused the subsequent monthly reset check to evaluate against `now` instead of the original `LastResetDate`. As a result, `limit.MonthlyUsed` was never reset to 0 across month boundaries, leading to perpetual accumulation of monthly usage and eventual permanent denial-of-service on financial transactions for accounts.
+**Learning:** Mutating state fields during sequential time-window checks invalidates subsequent conditions in the same function call.
+**Prevention:** Always preserve initial state values in local variables before executing sequential condition checks that depend on those values.

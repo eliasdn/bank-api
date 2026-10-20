@@ -157,19 +157,20 @@ func (s *TransactionLimitService) RecordTransaction(accountID uint, transactionI
 // resetUsageIfNeeded resets daily/monthly usage if date has changed
 func (s *TransactionLimitService) resetUsageIfNeeded(limit *TransactionLimit) {
 	now := time.Now()
+	lastReset := limit.LastResetDate
 
-	// Reset daily usage
-	if !now.Truncate(24 * time.Hour).Equal(limit.LastResetDate.Truncate(24 * time.Hour)) {
+	// Reset monthly usage if month or year changed
+	if now.Year() != lastReset.Year() || now.Month() != lastReset.Month() {
+		limit.MonthlyUsed = 0
+	}
+
+	// Reset daily usage if date changed
+	if !now.Truncate(24 * time.Hour).Equal(lastReset.Truncate(24 * time.Hour)) {
 		limit.DailyUsed = 0
 		limit.DepositUsed = 0
 		limit.WithdrawalUsed = 0
 		limit.TransferUsed = 0
 		limit.LastResetDate = now
-	}
-
-	// Reset monthly usage
-	if now.Year() != limit.LastResetDate.Year() || now.Month() != limit.LastResetDate.Month() {
-		limit.MonthlyUsed = 0
 	}
 }
 

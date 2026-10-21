@@ -293,6 +293,8 @@ func TestValidateTransfer(t *testing.T) {
 		wantErr       bool
 	}{
 		{"valid transfer", 1, 2, 100.0, "Payment", false},
+		{"zero source account ID", 0, 2, 100.0, "Payment", true},
+		{"zero destination account ID", 1, 0, 100.0, "Payment", true},
 		{"same account", 1, 1, 100.0, "Payment", true},
 		{"invalid amount", 1, 2, -10.0, "Payment", true},
 		{"description too long", 1, 2, 100.0, strings.Repeat("x", 256), true},

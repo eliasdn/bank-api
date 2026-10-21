@@ -398,7 +398,7 @@ func FuzzValidateTransfer(f *testing.F) {
 		err := v.ValidateTransfer(fromID, toID, amount, description)
 		amtErr := v.ValidateAmount(amount)
 		descErr := v.ValidateDescription(description)
-		expectValid := (fromID != toID) && (amtErr == nil) && (descErr == nil)
+		expectValid := (fromID != 0) && (toID != 0) && (fromID != toID) && (amtErr == nil) && (descErr == nil)
 
 		if (err == nil) != expectValid {
 			t.Errorf("ValidateTransfer mismatch for (%d, %d, %v, %q): got err=%v, expected valid=%v",

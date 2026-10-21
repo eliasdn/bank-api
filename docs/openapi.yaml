@@ -632,6 +632,7 @@ paths:
           description: Source account ID
           schema:
             type: integer
+            minimum: 1
       requestBody:
         required: true
         content:
@@ -800,6 +801,7 @@ components:
           example: 100.5
         to_account_id:
           type: integer
+          minimum: 1
           example: 123
         description:
           type: string

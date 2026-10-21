@@ -240,6 +240,9 @@ func (v *Validator) ValidateDescription(description string) error {
 
 // ValidateTransfer validates transfer details including description length
 func (v *Validator) ValidateTransfer(fromAccountID, toAccountID uint, amount float64, description string) error {
+	if fromAccountID == 0 || toAccountID == 0 {
+		return errors.NewValidationError("account ID must be valid")
+	}
 	if fromAccountID == toAccountID {
 		return errors.NewValidationError("cannot transfer to the same account")
 	}

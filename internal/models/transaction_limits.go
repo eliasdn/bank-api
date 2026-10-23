@@ -59,12 +59,27 @@ func (s *TransactionLimitService) GetLimit(accountID uint) (*TransactionLimit, e
 		if err == gorm.ErrRecordNotFound {
 			// Create default limits if not exists
 			limit = TransactionLimit{
-				AccountID:     accountID,
-				LastResetDate: time.Now(),
+				AccountID:       accountID,
+				DailyLimit:      10000,
+				MonthlyLimit:    100000,
+				MinAmount:       0.01,
+				MaxAmount:       50000,
+				TransferLimit:   5000,
+				WithdrawalLimit: 5000,
+				DepositLimit:    10000,
+				LastResetDate:   time.Now(),
 			}
-			err = s.db.Create(&limit).Error
+			if createErr := s.db.Create(&limit).Error; createErr != nil {
+				// Retry query in case of concurrent creation race condition
+				var fetchedLimit TransactionLimit
+				if retryErr := s.db.Where("account_id = ?", accountID).First(&fetchedLimit).Error; retryErr == nil {
+					return &fetchedLimit, nil
+				}
+				return nil, createErr
+			}
+			return &limit, nil
 		}
-		return &limit, err
+		return nil, err
 	}
 	return &limit, nil
 }
@@ -114,27 +129,55 @@ func (s *TransactionLimitService) CheckLimit(accountID uint, amount float64, tra
 	return nil
 }
 
-// RecordTransaction records a transaction and updates usage
+// RecordTransaction records a transaction and updates usage atomically using SQL expressions to prevent TOCTOU race conditions.
 func (s *TransactionLimitService) RecordTransaction(accountID uint, transactionID uint, amount float64, transactionType string) error {
 	limit, err := s.GetLimit(accountID)
 	if err != nil {
 		return err
 	}
 
-	// Reset usage if needed
+	// Capture initial reset date before checking for resets
+	lastReset := limit.LastResetDate
 	s.resetUsageIfNeeded(limit)
 
-	// Update usage
-	limit.DailyUsed += amount
-	limit.MonthlyUsed += amount
+	now := time.Now()
+	dateChanged := !now.Truncate(24 * time.Hour).Equal(lastReset.Truncate(24 * time.Hour))
+	monthChanged := now.Year() != lastReset.Year() || now.Month() != lastReset.Month()
 
-	switch transactionType {
-	case "deposit":
-		limit.DepositUsed += amount
-	case "withdrawal":
-		limit.WithdrawalUsed += amount
-	case "transfer":
-		limit.TransferUsed += amount
+	updates := map[string]interface{}{
+		"updated_at": now,
+	}
+
+	if dateChanged {
+		updates["daily_used"] = amount
+		updates["last_reset_date"] = limit.LastResetDate
+		updates["deposit_used"] = 0.0
+		updates["withdrawal_used"] = 0.0
+		updates["transfer_used"] = 0.0
+		switch transactionType {
+		case "deposit":
+			updates["deposit_used"] = amount
+		case "withdrawal":
+			updates["withdrawal_used"] = amount
+		case "transfer":
+			updates["transfer_used"] = amount
+		}
+		if monthChanged {
+			updates["monthly_used"] = amount
+		} else {
+			updates["monthly_used"] = gorm.Expr("monthly_used + ?", amount)
+		}
+	} else {
+		updates["daily_used"] = gorm.Expr("daily_used + ?", amount)
+		updates["monthly_used"] = gorm.Expr("monthly_used + ?", amount)
+		switch transactionType {
+		case "deposit":
+			updates["deposit_used"] = gorm.Expr("deposit_used + ?", amount)
+		case "withdrawal":
+			updates["withdrawal_used"] = gorm.Expr("withdrawal_used + ?", amount)
+		case "transfer":
+			updates["transfer_used"] = gorm.Expr("transfer_used + ?", amount)
+		}
 	}
 
 	// Record transaction usage
@@ -143,15 +186,20 @@ func (s *TransactionLimitService) RecordTransaction(accountID uint, transactionI
 		TransactionID: transactionID,
 		Amount:        amount,
 		Type:          transactionType,
-		Date:          time.Now(),
+		Date:          now,
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(limit).Error; err != nil {
+		if err := tx.Model(limit).UpdateColumns(updates).Error; err != nil {
 			return err
 		}
 		return tx.Create(&usage).Error
 	})
+}
+
+// ResetUsageIfNeededForTest exports resetUsageIfNeeded for external tests.
+func ResetUsageIfNeededForTest(s *TransactionLimitService, limit *TransactionLimit) {
+	s.resetUsageIfNeeded(limit)
 }
 
 // resetUsageIfNeeded resets daily/monthly usage if date has changed

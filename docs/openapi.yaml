@@ -235,7 +235,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserInfoResponse'
+                $ref: '#/components/schemas/UserProfileResponse'
         '401':
           description: Unauthorized
           content:
@@ -820,13 +820,9 @@ components:
           type: string
           maxLength: 100
           example: john.doe@example.com
-        full_name:
+        fullName:
           type: string
           example: John Doe
-        created_at:
-          type: string
-          format: date-time
-          example: '2023-01-01T00:00:00Z'
     LoginResponse:
       type: object
       properties:
@@ -857,6 +853,10 @@ components:
           format: double
           example: 1500.75
         created_at:
+          type: string
+          format: date-time
+          example: '2023-01-01T00:00:00Z'
+        updated_at:
           type: string
           format: date-time
           example: '2023-01-01T00:00:00Z'
@@ -900,6 +900,10 @@ components:
             - failed
           example: completed
         created_at:
+          type: string
+          format: date-time
+          example: '2023-01-01T00:00:00Z'
+        updated_at:
           type: string
           format: date-time
           example: '2023-01-01T00:00:00Z'
@@ -956,7 +960,7 @@ components:
                 example: Database is responsive
               data:
                 type: object
-    UserInfoResponse:
+    UserProfileResponse:
       type: object
       properties:
         username:

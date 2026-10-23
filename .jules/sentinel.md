@@ -141,3 +141,8 @@
 **Vulnerability:** In `TransactionLimitService.resetUsageIfNeeded`, mutating `limit.LastResetDate` during the daily reset check caused the subsequent monthly reset check to evaluate against `now` instead of the original `LastResetDate`. As a result, `limit.MonthlyUsed` was never reset to 0 across month boundaries, leading to perpetual accumulation of monthly usage and eventual permanent denial-of-service on financial transactions for accounts.
 **Learning:** Mutating state fields during sequential time-window checks invalidates subsequent conditions in the same function call.
 **Prevention:** Always preserve initial state values in local variables before executing sequential condition checks that depend on those values.
+
+## 2026-10-23 - TOCTOU Race Condition in Transaction Limit Recording
+**Vulnerability:** `TransactionLimitService.RecordTransaction` previously calculated daily/monthly limit usage in memory and saved static values via `tx.Save(limit)`. Under concurrent requests, this caused a TOCTOU race condition where parallel transactions overwrote each other's limit usage, allowing users to bypass transaction limits.
+**Learning:** Performing in-memory arithmetic on ORM struct instances followed by full struct persistence in high-concurrency environments causes lost updates.
+**Prevention:** Use atomic database-level SQL expressions (`gorm.Expr("daily_used + ?", amount)`) via targeted column updates (`UpdateColumns`) to ensure concurrency-safe usage tracking without lost updates.

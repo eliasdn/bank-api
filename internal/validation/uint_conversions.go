@@ -1,6 +1,10 @@
 package validation
 
-import "bank-api/internal/errors"
+import (
+	"math"
+
+	"bank-api/internal/errors"
+)
 
 // FormatUint is a highly optimized manual byte loop for formatting positive uint64.
 // It avoids function call overhead and is faster for simple decimal conversions in hot paths.
@@ -27,21 +31,26 @@ func FormatInt(i int64) string {
 	if i == 0 {
 		return "0"
 	}
+	if i == math.MinInt64 {
+		return "-9223372036854775808"
+	}
 	isNegative := i < 0
-	u := uint64(i)
+	var u uint64
 	if isNegative {
-		u = -u
+		u = uint64(-i)
+	} else {
+		u = uint64(i)
 	}
 	var b [20]byte
 	idx := 20
 	for u >= 10 {
 		q := u / 10
 		idx--
-		b[idx] = byte('0' + (u - q*10)) // #nosec G115
+		b[idx] = byte('0' + (u - q*10)) // #nosec G115 -- u - q*10 is mathematically <= 9
 		u = q
 	}
 	idx--
-	b[idx] = byte('0' + u) // #nosec G115
+	b[idx] = byte('0' + u) // #nosec G115 -- u is single digit < 10
 	if isNegative {
 		idx--
 		b[idx] = '-'

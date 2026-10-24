@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"math"
 	"strconv"
 	"testing"
 )
@@ -21,6 +22,32 @@ func TestFormatUint(t *testing.T) {
 			res := FormatUint(tt.input)
 			if res != tt.expected {
 				t.Errorf("FormatUint(%d): expected %s, got %s", tt.input, tt.expected, res)
+			}
+		})
+	}
+}
+
+func TestFormatInt(t *testing.T) {
+	tests := []struct {
+		input    int64
+		expected string
+	}{
+		{0, "0"},
+		{1, "1"},
+		{42, "42"},
+		{1000, "1000"},
+		{-1, "-1"},
+		{-42, "-42"},
+		{-1000, "-1000"},
+		{math.MaxInt64, "9223372036854775807"},
+		{math.MinInt64, "-9223372036854775808"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			res := FormatInt(tt.input)
+			if res != tt.expected {
+				t.Errorf("FormatInt(%d): expected %s, got %s", tt.input, tt.expected, res)
 			}
 		})
 	}

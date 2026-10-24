@@ -670,6 +670,39 @@ paths:
               schema:
                 type: integer
       operationId: postAccountsIdTransactionsTransfer
+  /rate-limit-status:
+    get:
+      tags:
+        - Health
+      summary: Get rate limit status
+      description: Retrieve the current rate limit status for the authenticated user and IP
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Rate limit status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitStatusResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Retry-After:
+              description: Time in seconds to wait before making a new request
+              schema:
+                type: integer
+      operationId: getRateLimitStatus
   /health/detailed:
     get:
       tags:
@@ -1058,6 +1091,34 @@ components:
         transaction_id:
           type: integer
           example: 3
+    RateLimitInfo:
+      type: object
+      properties:
+        limit:
+          type: integer
+          example: 100
+        remaining:
+          type: integer
+          example: 99
+        reset:
+          type: integer
+          example: 1672531200
+    RateLimitStatusResponse:
+      type: object
+      required:
+        - ip
+        - ip_limit
+      properties:
+        ip:
+          type: string
+          example: 192.168.1.1
+        ip_limit:
+          $ref: '#/components/schemas/RateLimitInfo'
+        user_id:
+          type: integer
+          example: 1
+        user_limit:
+          $ref: '#/components/schemas/RateLimitInfo'
     DetailedHealthResponse:
       type: object
       properties:

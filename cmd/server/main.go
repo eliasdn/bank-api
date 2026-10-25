@@ -130,11 +130,12 @@ func main() {
 
 	// Configure server with graceful shutdown
 	srv := &http.Server{
-		Addr:         ":" + cfg.Server.Port,
-		Handler:      router,
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
-		IdleTimeout:  cfg.Server.IdleTimeout,
+		Addr:              ":" + cfg.Server.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       cfg.Server.ReadTimeout,
+		WriteTimeout:      cfg.Server.WriteTimeout,
+		IdleTimeout:       cfg.Server.IdleTimeout,
 	}
 
 	// Graceful shutdown handling

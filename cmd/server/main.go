@@ -41,6 +41,9 @@ func main() {
 	// Add security headers middleware
 	router.Use(middleware.SecurityHeadersMiddleware())
 
+	// Add request body size limit middleware (1MB max)
+	router.Use(middleware.RequestBodySizeLimiter(1 * 1024 * 1024))
+
 	// Add rate limiting
 	rateLimiter := middleware.NewRateLimiter(cfg)
 	defer rateLimiter.StopCleanup()

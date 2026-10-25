@@ -146,3 +146,8 @@
 **Vulnerability:** `TransactionLimitService.RecordTransaction` previously calculated daily/monthly limit usage in memory and saved static values via `tx.Save(limit)`. Under concurrent requests, this caused a TOCTOU race condition where parallel transactions overwrote each other's limit usage, allowing users to bypass transaction limits.
 **Learning:** Performing in-memory arithmetic on ORM struct instances followed by full struct persistence in high-concurrency environments causes lost updates.
 **Prevention:** Use atomic database-level SQL expressions (`gorm.Expr("daily_used + ?", amount)`) via targeted column updates (`UpdateColumns`) to ensure concurrency-safe usage tracking without lost updates.
+
+## 2026-10-24 - Uncontrolled Resource Consumption via Oversized Request Payloads
+**Vulnerability:** The application lacked request body size restrictions on POST/PUT endpoints, allowing malicious clients to send arbitrarily large JSON payloads that cause server memory exhaustion and Denial of Service (CWE-400).
+**Learning:** Default HTTP servers and Gin routers read request bodies without size caps unless explicitly constrained using `http.MaxBytesReader` or custom size limiting middleware.
+**Prevention:** Always apply a request body size limiter middleware (e.g. `http.MaxBytesReader`) globally or to data-ingesting route groups to cap payload sizes before reading or parsing JSON bodies into memory.

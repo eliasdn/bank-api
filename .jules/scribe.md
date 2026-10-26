@@ -26,3 +26,7 @@
 ## 2026-10-24 - Rate Limit Status Documentation Drift
 **Learning:** Recent code updates to `cmd/server/main.go` exposed a new debugging endpoint `/rate-limit-status` and defined new structs `RateLimitInfo` and `RateLimitStatusResponse` in `internal/middleware/rate_limiter.go`. However, these additions were not matched in `docs/openapi.yaml`, leading to missing endpoint documentation.
 **Action:** When auditing codebase changes, always verify if new endpoints have been registered (e.g. `api.GET(...)`) in server/router setup files and if new response structs have been created. If so, precisely inject those endpoints and schemas into the OpenAPI documentation matching the codebase implementation. Always clean up temporary script files or markdown plan files used during the patching process before requesting review.
+
+## 2026-10-26 - Accounts Wrapper Pattern Drift
+**Learning:** Recent codebase changes refactored `AccountListResponse` and `AccountResponse` in `internal/handlers/accounts.go` to wrap account properties inside a `data` JSON property rather than returning the raw struct or a slice directly. Additionally, GORM models like `Account` serialized without explicit `json` tags serialize to PascalCase (e.g. `AccountNumber` instead of `account_number`).
+**Action:** When updating OpenAPI docs for account responses, explicitly refactor schemas to use a wrapper pattern (`data`) matching the new DTOs, and ensure the nested model schemas use PascalCase property names exactly as Go's default JSON marshalling produces for structs without tags.

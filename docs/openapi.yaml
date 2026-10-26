@@ -370,7 +370,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountsResponse'
+                $ref: '#/components/schemas/AccountListResponse'
         '400':
           description: Bad Request
           content:
@@ -889,13 +889,34 @@ components:
     AccountResponse:
       type: object
       properties:
-        id:
+        data:
+          $ref: '#/components/schemas/AccountData'
+    AccountData:
+      type: object
+      properties:
+        ID:
           type: integer
           example: 1
-        account_number:
+        CreatedAt:
+          type: string
+          format: date-time
+          example: '2023-01-01T00:00:00Z'
+        UpdatedAt:
+          type: string
+          format: date-time
+          example: '2023-01-01T00:00:00Z'
+        DeletedAt:
+          type: string
+          format: date-time
+          example: '2023-01-01T00:00:00Z'
+          nullable: true
+        UserID:
+          type: integer
+          example: 1
+        AccountNumber:
           type: string
           example: ACC-2023-000001
-        account_type:
+        AccountType:
           type: string
           enum:
             - checking
@@ -903,25 +924,17 @@ components:
             - credit
           maxLength: 20
           example: checking
-        balance:
+        Balance:
           type: number
           format: double
           example: 1500.75
-        created_at:
-          type: string
-          format: date-time
-          example: '2023-01-01T00:00:00Z'
-        updated_at:
-          type: string
-          format: date-time
-          example: '2023-01-01T00:00:00Z'
-    AccountsResponse:
+    AccountListResponse:
       type: object
       properties:
-        accounts:
+        data:
           type: array
           items:
-            $ref: '#/components/schemas/AccountResponse'
+            $ref: '#/components/schemas/AccountData'
         pagination:
           $ref: '#/components/schemas/PaginationInfo'
     TransactionResponse:

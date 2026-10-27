@@ -34,6 +34,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	assert.Equal(t, "none", w.Header().Get("X-Permitted-Cross-Domain-Policies"))
 	assert.Equal(t, "off", w.Header().Get("X-DNS-Prefetch-Control"))
 	assert.Equal(t, "noopen", w.Header().Get("X-Download-Options"))
+	assert.Equal(t, "require-corp", w.Header().Get("Cross-Origin-Embedder-Policy"))
 	assert.Equal(t, "same-origin", w.Header().Get("Cross-Origin-Opener-Policy"))
 	assert.Equal(t, "same-origin", w.Header().Get("Cross-Origin-Resource-Policy"))
 	assert.Equal(t, "no-store, max-age=0, must-revalidate", w.Header().Get("Cache-Control"))

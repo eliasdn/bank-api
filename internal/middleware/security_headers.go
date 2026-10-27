@@ -18,6 +18,7 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		c.Header("X-Permitted-Cross-Domain-Policies", "none")
 		c.Header("X-DNS-Prefetch-Control", "off")
 		c.Header("X-Download-Options", "noopen")
+		c.Header("Cross-Origin-Embedder-Policy", "require-corp")
 		c.Header("Cross-Origin-Opener-Policy", "same-origin")
 		c.Header("Cross-Origin-Resource-Policy", "same-origin")
 		c.Header("Cache-Control", "no-store, max-age=0, must-revalidate")

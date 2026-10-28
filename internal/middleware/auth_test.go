@@ -103,6 +103,51 @@ func TestAuthMiddleware(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectUserID:   uint(42),
 		},
+		{
+			name: "Reject negative sub claim",
+			setupRequest: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/", nil)
+				token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+					"sub": -1.0,
+					"exp": time.Now().Add(time.Hour).Unix(),
+				})
+				tokenString, _ := token.SignedString([]byte("test-secret"))
+				req.Header.Set("Authorization", "Bearer "+tokenString)
+				return req
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedError:  "Invalid user ID in token",
+		},
+		{
+			name: "Reject zero sub claim",
+			setupRequest: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/", nil)
+				token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+					"sub": 0,
+					"exp": time.Now().Add(time.Hour).Unix(),
+				})
+				tokenString, _ := token.SignedString([]byte("test-secret"))
+				req.Header.Set("Authorization", "Bearer "+tokenString)
+				return req
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedError:  "Invalid user ID in token",
+		},
+		{
+			name: "Reject fractional sub claim",
+			setupRequest: func() *http.Request {
+				req, _ := http.NewRequest("GET", "/", nil)
+				token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+					"sub": 12.34,
+					"exp": time.Now().Add(time.Hour).Unix(),
+				})
+				tokenString, _ := token.SignedString([]byte("test-secret"))
+				req.Header.Set("Authorization", "Bearer "+tokenString)
+				return req
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedError:  "Invalid user ID in token",
+		},
 	}
 
 	for _, tt := range tests {

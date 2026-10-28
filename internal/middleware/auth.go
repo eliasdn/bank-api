@@ -1,10 +1,10 @@
 package middleware
 
 import (
-	"bank-api/internal/validation"
-	"net/http"
-
 	"bank-api/internal/config"
+	"bank-api/internal/validation"
+	"math"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -67,17 +67,60 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		}
 
 		// RFC 7519 defines 'sub' as a string, but many implementations use numbers.
-		// Accommodate float64 and numeric strings (converting to uint for DB lookups),
-		// while preserving non-numeric strings for external conventions.
-		if subFloat, ok := claims["sub"].(float64); ok {
-			c.Set("userID", uint(subFloat))
-		} else if subStr, ok := claims["sub"].(string); ok {
-			if id, err := validation.ParseUint(subStr, 0); err == nil {
-				c.Set("userID", uint(id))
+		// Accommodate float64, integers, and numeric strings (converting to uint for DB lookups),
+		// while validating bounds (>0, finite, integer) to prevent underflow/wrap-around.
+		switch v := claims["sub"].(type) {
+		case float64:
+			if v > 0 && !math.IsInf(v, 0) && v == math.Trunc(v) {
+				c.Set("userID", uint(v))
 			} else {
-				c.Set("userID", subStr)
+				c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidUserIDJSON)
+				c.Abort()
+				return
 			}
-		} else {
+		case string:
+			if id, err := validation.ParseUint(v, 0); err == nil && id > 0 {
+				c.Set("userID", uint(id))
+			} else if v != "" && v != "0" {
+				c.Set("userID", v)
+			} else {
+				c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidUserIDJSON)
+				c.Abort()
+				return
+			}
+		case uint:
+			if v > 0 {
+				c.Set("userID", v)
+			} else {
+				c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidUserIDJSON)
+				c.Abort()
+				return
+			}
+		case uint64:
+			if v > 0 {
+				c.Set("userID", uint(v))
+			} else {
+				c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidUserIDJSON)
+				c.Abort()
+				return
+			}
+		case int:
+			if v > 0 {
+				c.Set("userID", uint(v))
+			} else {
+				c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidUserIDJSON)
+				c.Abort()
+				return
+			}
+		case int64:
+			if v > 0 {
+				c.Set("userID", uint(v))
+			} else {
+				c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidUserIDJSON)
+				c.Abort()
+				return
+			}
+		default:
 			c.Data(http.StatusUnauthorized, "application/json", authErrorInvalidUserIDJSON)
 			c.Abort()
 			return

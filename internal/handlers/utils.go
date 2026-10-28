@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"bank-api/internal/validation"
+	"math"
+
 	"github.com/gin-gonic/gin"
 )
 
 // getUserID safely extracts the user ID from the gin Context.
 // It handles uint, float64 (common from JSON/JWT), and string representations
-// to prevent silent type assertion failures and rate-limiting bypasses.
+// while checking bounds (>0) to prevent integer underflow and rate-limiting bypasses.
 func getUserID(c *gin.Context) uint {
 	val, exists := c.Get("userID")
 	if !exists {
@@ -17,10 +19,22 @@ func getUserID(c *gin.Context) uint {
 	switch v := val.(type) {
 	case uint:
 		return v
-	case float64:
+	case uint64:
 		return uint(v)
+	case int:
+		if v > 0 {
+			return uint(v)
+		}
+	case int64:
+		if v > 0 {
+			return uint(v)
+		}
+	case float64:
+		if v > 0 && !math.IsInf(v, 0) && v == math.Trunc(v) {
+			return uint(v)
+		}
 	case string:
-		if id, err := validation.ParseUint(v, 0); err == nil {
+		if id, err := validation.ParseUint(v, 0); err == nil && id > 0 {
 			return uint(id)
 		}
 	}

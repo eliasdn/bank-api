@@ -878,6 +878,11 @@ components:
         fullName:
           type: string
           example: John Doe
+        Accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountData'
+          nullable: true
     LoginResponse:
       type: object
       properties:
@@ -928,6 +933,11 @@ components:
           type: number
           format: double
           example: 1500.75
+        Transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionData'
+          nullable: true
     AccountListResponse:
       type: object
       properties:
@@ -1190,3 +1200,31 @@ components:
           type: object
           additionalProperties:
             type: string
+    TransactionData:
+      type: object
+      properties:
+        ID:
+          type: integer
+          example: 1
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+        DeletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        AccountID:
+          type: integer
+          example: 1
+        Amount:
+          type: number
+          format: double
+        TransactionType:
+          type: string
+        Reference:
+          type: string
+        Status:
+          type: string

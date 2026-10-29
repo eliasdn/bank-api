@@ -165,3 +165,8 @@
 **Vulnerability:** Audit log entries recorded raw `User-Agent` HTTP request headers directly into database and application audit logs without character sanitization or length restrictions, exposing structured log consumers to CRLF log injection (CWE-117) and database storage bloat.
 **Learning:** Request headers supplied directly by clients cannot be trusted in log entries or storage, even in background audit services.
 **Prevention:** Sanitize incoming client HTTP headers using `validation.SanitizeUserAgent` to truncate strings to max length (e.g. 512 bytes) and convert ASCII control characters (`< 32` or `127`, including `\r`, `\n`, `\x00`) to spaces before recording audit logs.
+
+## 2026-10-29 - Standard Library Vulnerability GO-2026-6809 in crypto/x509
+**Vulnerability:** GO-2026-6809 flags compromised intermediate x509 certificates that were not distrusted by older Go standard library `crypto/x509` verification functions.
+**Learning:** Standard library vulnerability findings flagged against stdlib components in Go require upgrading the Go directive and runtime/toolchain version in `go.mod` to ensure the application builds against patched `crypto/x509` implementations.
+**Prevention:** Maintain `go.mod` up to date with the latest Go patch version (e.g., `go 1.26.10`) to inherit standard library security fixes.

@@ -1,8 +1,6 @@
 module bank-api
 
-go 1.26.9
-
-toolchain go1.26.10
+go 1.26.10
 
 require (
 	github.com/gin-contrib/cors v1.7.9

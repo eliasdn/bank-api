@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bank-api/internal/models"
+	"bank-api/internal/validation"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -40,7 +41,7 @@ func (a *AuditLogger) LogTransaction(c *gin.Context, transaction *models.Transac
 		Action:        transaction.TransactionType,
 		Details:       transaction.Reference,
 		IPAddress:     c.ClientIP(),
-		UserAgent:     c.GetHeader("User-Agent"),
+		UserAgent:     validation.SanitizeUserAgent(c.GetHeader("User-Agent")),
 		CreatedAt:     time.Now(),
 	}
 
@@ -55,7 +56,7 @@ func (a *AuditLogger) LogAccountAction(c *gin.Context, action string, accountID 
 		Action:    action,
 		Details:   details,
 		IPAddress: c.ClientIP(),
-		UserAgent: c.GetHeader("User-Agent"),
+		UserAgent: validation.SanitizeUserAgent(c.GetHeader("User-Agent")),
 		CreatedAt: time.Now(),
 	}
 
@@ -69,7 +70,7 @@ func (a *AuditLogger) LogUserAction(c *gin.Context, action string, userID uint, 
 		Action:    action,
 		Details:   details,
 		IPAddress: c.ClientIP(),
-		UserAgent: c.GetHeader("User-Agent"),
+		UserAgent: validation.SanitizeUserAgent(c.GetHeader("User-Agent")),
 		CreatedAt: time.Now(),
 	}
 

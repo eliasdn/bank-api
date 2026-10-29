@@ -160,3 +160,8 @@
 **Vulnerability:** Negative or non-integer JWT subject claims (`sub <= 0` or `12.34`) were accepted by authentication middleware and cast directly to `uint`, causing integer underflow wrap-around (`uint(-1.0) == 18446744073709551615`) and allowing unauthorized access with invalid user IDs.
 **Learning:** Converting untyped `float64` claims directly via `uint(subFloat)` without checking `v > 0`, non-finiteness, or `v == math.Trunc(v)` causes underflow wrap-around for negative numbers.
 **Prevention:** Always validate bounds (`v > 0`), finiteness, and integer precision on JWT subject claims before converting to unsigned integer types and setting context keys.
+
+## 2026-10-29 - CRLF Log Injection via Unsanitized User-Agent Header in Audit Logs
+**Vulnerability:** Audit log entries recorded raw `User-Agent` HTTP request headers directly into database and application audit logs without character sanitization or length restrictions, exposing structured log consumers to CRLF log injection (CWE-117) and database storage bloat.
+**Learning:** Request headers supplied directly by clients cannot be trusted in log entries or storage, even in background audit services.
+**Prevention:** Sanitize incoming client HTTP headers using `validation.SanitizeUserAgent` to truncate strings to max length (e.g. 512 bytes) and convert ASCII control characters (`< 32` or `127`, including `\r`, `\n`, `\x00`) to spaces before recording audit logs.

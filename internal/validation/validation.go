@@ -137,19 +137,23 @@ func (v *Validator) ValidatePassword(password string) error {
 	var hasUpper, hasLower, hasNumber, hasSpecial bool
 	for i := 0; i < len(password); i++ {
 		c := password[i]
-		if c == 0 || c == '\r' || c == '\n' {
-			return errors.NewValidationError("password cannot contain null bytes or line breaks")
-		}
 		switch {
 		case c >= 'A' && c <= 'Z':
 			hasUpper = true
+			continue
 		case c >= 'a' && c <= 'z':
 			hasLower = true
+			continue
 		case c >= '0' && c <= '9':
 			hasNumber = true
+			continue
 		case c >= 33 && c <= 126:
 			// Accepts all printable ASCII special characters (ASCII 33-126 non-alphanumeric) per OWASP guidelines
 			hasSpecial = true
+			continue
+		}
+		if c == 0 || c == '\r' || c == '\n' {
+			return errors.NewValidationError("password cannot contain null bytes or line breaks")
 		}
 	}
 

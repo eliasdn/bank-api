@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"bank-api/internal/config"
-	"bank-api/internal/validation"
+	"strconv"
 
 	"net/http"
 	"sync"
@@ -70,21 +70,34 @@ func (rl *RateLimiter) StrictLimitByIP(ip string) *rate.Limiter {
 	return actual.(*rate.Limiter)
 }
 
-// normalizeUserID normalizes different user ID types (uint, float64, string, etc.) to a canonical string key
+// normalizeUserID normalizes different user ID types (uint, float64, string, etc.) to a canonical key
 // to prevent rate limit bypasses caused by context key type mismatches across middlewares.
-func normalizeUserID(userID interface{}) string {
+// Optimization: native integer types are used to avoid string allocation overhead in map lookups.
+func normalizeUserID(userID interface{}) interface{} {
 	switch v := userID.(type) {
 	case uint:
-		return validation.FormatUint(uint64(v))
+		return uint64(v)
 	case uint64:
-		return validation.FormatUint(v)
+		return v
 	case int:
-		return validation.FormatInt(int64(v))
+		if v >= 0 {
+			return uint64(v)
+		}
+		return int64(v)
 	case int64:
-		return validation.FormatInt(v)
+		if v >= 0 {
+			return uint64(v)
+		}
+		return v
 	case float64:
-		return validation.FormatUint(uint64(v))
+		return uint64(v)
 	case string:
+		if val, err := strconv.ParseUint(v, 10, 64); err == nil {
+			return val
+		}
+		if val, err := strconv.ParseInt(v, 10, 64); err == nil {
+			return val
+		}
 		return v
 	default:
 		return "unknown"

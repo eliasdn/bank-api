@@ -25,7 +25,7 @@ func NewAuditService(db *gorm.DB) *AuditService {
 // LogAction logs a generic action
 func (s *AuditService) LogAction(c *gin.Context, userID uint, action, resource, resourceID, description string, oldValue, newValue interface{}) error {
 	ipAddress := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
+	userAgent := validation.SanitizeUserAgent(c.GetHeader("User-Agent"))
 
 	return s.logger.LogAction(userID, action, resource, resourceID, description, oldValue, newValue, ipAddress, userAgent)
 }
@@ -34,7 +34,7 @@ func (s *AuditService) LogAction(c *gin.Context, userID uint, action, resource, 
 // Avoids mutating gin.Context in background goroutines to prevent data races on recycled context objects.
 func (s *AuditService) LogTransaction(c *gin.Context, userID uint, transaction *models.Transaction, account *models.Account) error {
 	ipAddress := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
+	userAgent := validation.SanitizeUserAgent(c.GetHeader("User-Agent"))
 
 	go func() {
 		if err := s.logger.LogTransaction(userID, transaction, account, ipAddress, userAgent); err != nil {
@@ -64,7 +64,7 @@ func (s *AuditService) LogAccountCreation(c *gin.Context, userID uint, accounts 
 // LogUserRegistration logs user registration
 func (s *AuditService) LogUserRegistration(c *gin.Context, user *models.User) error {
 	ipAddress := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
+	userAgent := validation.SanitizeUserAgent(c.GetHeader("User-Agent"))
 
 	return s.logger.LogAction(user.ID, "register", "user", validation.FormatUint(uint64(user.ID)), "User registered", nil, user, ipAddress, userAgent)
 }

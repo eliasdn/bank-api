@@ -40,6 +40,27 @@ func TestValidateUsername(t *testing.T) {
 	}
 }
 
+func TestSanitizeUserAgent(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"valid user agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+		{"empty user agent", "", ""},
+		{"user agent with CRLF", "Mozilla/5.0\r\nInjectedHeader: bad", "Mozilla/5.0  InjectedHeader: bad"},
+		{"user agent with null byte", "Mozilla/5.0\x00Injected", "Mozilla/5.0 Injected"},
+		{"user agent exceeding 512 chars", strings.Repeat("A", 600), strings.Repeat("A", 512)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := SanitizeUserAgent(tt.input)
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
 func TestValidateEmail(t *testing.T) {
 	v := New()
 

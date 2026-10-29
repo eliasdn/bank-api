@@ -291,3 +291,25 @@ func ParseInt(s string, def int) int {
 	}
 	return res
 }
+
+// SanitizeUserAgent truncates user-agent strings to max 512 characters
+// and replaces control characters (ASCII < 32 or 127) including null bytes,
+// carriage returns, and newlines with spaces to prevent CRLF log injection (CWE-117).
+func SanitizeUserAgent(ua string) string {
+	if len(ua) > 512 {
+		ua = ua[:512]
+	}
+	b := []byte(ua)
+	modified := false
+	for i := 0; i < len(b); i++ {
+		c := b[i]
+		if c < 32 || c == 127 {
+			b[i] = ' '
+			modified = true
+		}
+	}
+	if modified {
+		return string(b)
+	}
+	return ua
+}

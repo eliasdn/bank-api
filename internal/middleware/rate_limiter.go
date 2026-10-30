@@ -53,7 +53,7 @@ func (rl *RateLimiter) LimitByIP(ip string) *rate.Limiter {
 	}
 
 	// 100 requests per minute per IP
-	limiter := rate.NewLimiter(rate.Every(time.Minute), 100)
+	limiter := rate.NewLimiter(rate.Every(time.Minute/100), 100)
 	actual, _ := rl.ipLimiters.LoadOrStore(ip, limiter)
 	return actual.(*rate.Limiter)
 }
@@ -65,7 +65,7 @@ func (rl *RateLimiter) StrictLimitByIP(ip string) *rate.Limiter {
 	}
 
 	// 5 requests per minute per IP for sensitive endpoints
-	limiter := rate.NewLimiter(rate.Every(time.Minute), 5)
+	limiter := rate.NewLimiter(rate.Every(time.Minute/5), 5)
 	actual, _ := rl.authIpLimiters.LoadOrStore(ip, limiter)
 	return actual.(*rate.Limiter)
 }
@@ -112,7 +112,7 @@ func (rl *RateLimiter) LimitByUser(userID interface{}) *rate.Limiter {
 	}
 
 	// 1000 requests per hour per authenticated user
-	limiter := rate.NewLimiter(rate.Every(time.Hour), 1000)
+	limiter := rate.NewLimiter(rate.Every(time.Hour/1000), 1000)
 	actual, _ := rl.userLimiters.LoadOrStore(key, limiter)
 	return actual.(*rate.Limiter)
 }

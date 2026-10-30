@@ -702,17 +702,6 @@ paths:
               description: Time in seconds to wait before making a new request
               schema:
                 type: integer
-        '429':
-          description: Too Many Requests - Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          headers:
-            Retry-After:
-              description: Time in seconds to wait before making a new request
-              schema:
-                type: integer
       operationId: getRateLimitStatus
   /health/detailed:
     get:
@@ -737,17 +726,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '429':
-          description: Too Many Requests - Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          headers:
-            Retry-After:
-              description: Time in seconds to wait before making a new request
-              schema:
-                type: integer
         '429':
           description: Too Many Requests - Rate limit exceeded
           content:

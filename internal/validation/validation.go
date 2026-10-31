@@ -299,17 +299,29 @@ func SanitizeUserAgent(ua string) string {
 	if len(ua) > 512 {
 		ua = ua[:512]
 	}
-	b := []byte(ua)
+
+	// Optimization: Fast path to check if modification is needed before allocating.
 	modified := false
-	for i := 0; i < len(b); i++ {
+	for i := 0; i < len(ua); i++ {
+		c := ua[i]
+		if c < 32 || c == 127 {
+			modified = true
+			break
+		}
+	}
+
+	if !modified {
+		return ua
+	}
+
+	// Optimization: Use fixed-size stack array to prevent heap allocation.
+	var b [512]byte
+	n := copy(b[:], ua)
+	for i := 0; i < n; i++ {
 		c := b[i]
 		if c < 32 || c == 127 {
 			b[i] = ' '
-			modified = true
 		}
 	}
-	if modified {
-		return string(b)
-	}
-	return ua
+	return string(b[:n])
 }

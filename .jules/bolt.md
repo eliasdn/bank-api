@@ -225,3 +225,6 @@
 ## 2026-10-23 - Optimize string validation byte loops
 **Learning:** In manual byte loops for string validation (like `ValidatePassword`), evaluating the most common valid character conditions first and short-circuiting via `continue` before checking for rare invalid edge cases (like null bytes or newlines) leverages branch prediction and avoids unnecessary edge-case checks on every valid character. This significantly speeds up string validation in hot paths.
 **Action:** Always structure string validation byte loops to check and `continue` on expected common valid characters before evaluating failure/edge-case conditions at the bottom of the loop body.
+## 2026-10-24 - [Optimize SanitizeUserAgent with fast path and stack array]
+**Learning:** `SanitizeUserAgent` always allocated a byte slice `[]byte(ua)` on the heap to scan for control characters. For valid strings that don't need modification, this allocation is completely wasted.
+**Action:** To optimize string sanitization routines (e.g., `SanitizeUserAgent`), perform a fast-path scan to check if modifications are required before allocating memory. If no control characters are found, return the original string directly to avoid redundant slice allocations. If modification is needed, use a fixed-size stack array `var b [N]byte` and copy the data to avoid dynamic heap allocation.

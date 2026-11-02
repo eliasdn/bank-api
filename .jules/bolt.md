@@ -228,3 +228,11 @@
 ## 2026-10-24 - [Optimize SanitizeUserAgent with fast path and stack array]
 **Learning:** `SanitizeUserAgent` always allocated a byte slice `[]byte(ua)` on the heap to scan for control characters. For valid strings that don't need modification, this allocation is completely wasted.
 **Action:** To optimize string sanitization routines (e.g., `SanitizeUserAgent`), perform a fast-path scan to check if modifications are required before allocating memory. If no control characters are found, return the original string directly to avoid redundant slice allocations. If modification is needed, use a fixed-size stack array `var b [N]byte` and copy the data to avoid dynamic heap allocation.
+
+## 2026-10-25 - [Optimize ValidateFullName and ValidateDescription byte loops]
+**Learning:** In manual byte loops for string validation (like `ValidateFullName` and `ValidateDescription`), evaluating rare edge cases like null bytes (`\x00`) or newlines (`\n`) on every single valid character introduces unnecessary branch evaluations and slows down the loop.
+**Action:** Restructure string validation byte loops to evaluate the most common case (valid alphanumeric characters and common symbols) first and short-circuit via `continue`. This leverages branch prediction and skips evaluating the invalid edge cases for valid characters.
+
+## 2026-10-25 - [Named structs vs anonymous structs for c.JSON overhead]
+**Learning:** In Go, replacing anonymous structs with named structs for JSON serialization (e.g., in HTTP handlers using `c.JSON`) provides zero measurable runtime performance difference because `encoding/json` reflection caches field information for both types identically at runtime. Doing so is not a valid performance optimization.
+**Action:** Do not attempt to replace anonymous structs with named structs as a performance optimization for `encoding/json` overhead.

@@ -170,3 +170,8 @@
 **Vulnerability:** GO-2026-6809 flags compromised intermediate x509 certificates that were not distrusted by older Go standard library `crypto/x509` verification functions.
 **Learning:** Standard library vulnerability findings flagged against stdlib components in Go require upgrading the Go directive and runtime/toolchain version in `go.mod` to ensure the application builds against patched `crypto/x509` implementations.
 **Prevention:** Maintain `go.mod` up to date with the latest Go patch version (e.g., `go 1.26.10`) to inherit standard library security fixes.
+
+## 2026-11-01 - CRLF Log Injection via Unsanitized User-Agent in Request and Audit Logging Middlewares
+**Vulnerability:** While database audit logging sanitized client User-Agent headers, the HTTP request logging middleware (`RequestLogger`) and middleware-level `AuditLogger` in `internal/middleware/logging.go` logged raw `c.Request.UserAgent()` directly. Client-controlled headers containing carriage returns, newlines, null bytes, or excessive payload lengths exposed structured log collectors to log forging and CRLF log injection (CWE-117).
+**Learning:** Sanitization functions implemented for specific services (e.g. audit services) must also be applied uniformly to general-purpose request and access logging middlewares that capture client-controlled HTTP headers.
+**Prevention:** Always invoke `validation.SanitizeUserAgent(c.Request.UserAgent())` across all logging middlewares to strip control characters and truncate header lengths prior to recording structured log entries.

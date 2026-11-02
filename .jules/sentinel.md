@@ -170,3 +170,7 @@
 **Vulnerability:** GO-2026-6809 flags compromised intermediate x509 certificates that were not distrusted by older Go standard library `crypto/x509` verification functions.
 **Learning:** Standard library vulnerability findings flagged against stdlib components in Go require upgrading the Go directive and runtime/toolchain version in `go.mod` to ensure the application builds against patched `crypto/x509` implementations.
 **Prevention:** Maintain `go.mod` up to date with the latest Go patch version (e.g., `go 1.26.10`) to inherit standard library security fixes.
+## 2026-10-31 - Unauthenticated Prometheus Metrics Disclosure
+**Vulnerability:** The `/metrics` endpoint serving Prometheus metrics via `promhttp.Handler()` was configured without authentication, exposing internal application state, API usage metrics, and business logic counters to the public internet, which could aid attackers in reconnaissance or denial-of-service planning.
+**Learning:** Default monitoring and observability endpoints expose sensitive data regarding application activity. Simply because an endpoint is designed for internal infrastructure (like Prometheus) does not mean it is automatically secured by the routing framework.
+**Prevention:** Always wrap monitoring and metric endpoints with appropriate authentication or restricted access controls (e.g., `authMiddleware.Authenticate()` or basic auth configured for the monitoring infrastructure) before exposing them on the router.

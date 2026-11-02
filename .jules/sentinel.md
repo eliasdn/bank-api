@@ -170,3 +170,7 @@
 **Vulnerability:** GO-2026-6809 flags compromised intermediate x509 certificates that were not distrusted by older Go standard library `crypto/x509` verification functions.
 **Learning:** Standard library vulnerability findings flagged against stdlib components in Go require upgrading the Go directive and runtime/toolchain version in `go.mod` to ensure the application builds against patched `crypto/x509` implementations.
 **Prevention:** Maintain `go.mod` up to date with the latest Go patch version (e.g., `go 1.26.10`) to inherit standard library security fixes.
+## 2026-11-02 - Fix CRLF Log Injection via Unsanitized User-Agent Header
+**Vulnerability:** The `User-Agent` header was logged without sanitization in both HTTP request logs (`RequestLogger.LoggingMiddleware`) and audit logs (`AuditLogger.Log`), making it vulnerable to CRLF log injection.
+**Learning:** Raw headers from clients should never be trusted and directly logged, as they can be manipulated to inject malicious line breaks or control characters into structured logs or databases.
+**Prevention:** Always sanitize client headers like `User-Agent` (e.g., using `validation.SanitizeUserAgent`) to remove control characters before writing them to logs.

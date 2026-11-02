@@ -80,3 +80,75 @@ func TestLoggingMiddleware_RequestIDValidation(t *testing.T) {
 		})
 	}
 }
+
+type testCaptureLogger struct {
+	lastLog RequestLog
+}
+
+func (l *testCaptureLogger) Error(msg string, fields ...interface{}) {
+	for i := 0; i < len(fields); i += 2 {
+		if fields[i] == "request" {
+			if rl, ok := fields[i+1].(RequestLog); ok {
+				l.lastLog = rl
+			}
+		}
+	}
+}
+
+func (l *testCaptureLogger) Info(msg string, fields ...interface{}) {
+	for i := 0; i < len(fields); i += 2 {
+		if fields[i] == "request" {
+			if rl, ok := fields[i+1].(RequestLog); ok {
+				l.lastLog = rl
+			}
+		}
+	}
+}
+
+func TestLoggingMiddleware_UserAgentSanitization(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name          string
+		incomingUA    string
+		expectedLogUA string
+	}{
+		{
+			name:          "standard user-agent",
+			incomingUA:    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+			expectedLogUA: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+		},
+		{
+			name:          "user-agent with CRLF injection",
+			incomingUA:    "Mozilla/5.0\r\nInjected: malicious",
+			expectedLogUA: "Mozilla/5.0  Injected: malicious",
+		},
+		{
+			name:          "user-agent with null byte",
+			incomingUA:    "TestClient\x00Injected",
+			expectedLogUA: "TestClient Injected",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := gin.New()
+			captureLogger := &testCaptureLogger{}
+			reqLogger := NewRequestLogger(captureLogger)
+			r.Use(reqLogger.LoggingMiddleware())
+
+			r.GET("/test", func(c *gin.Context) {
+				c.Status(http.StatusOK)
+			})
+
+			req, _ := http.NewRequest("GET", "/test", nil)
+			req.Header.Set("User-Agent", tt.incomingUA)
+
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Equal(t, tt.expectedLogUA, captureLogger.lastLog.UserAgent)
+		})
+	}
+}

@@ -67,12 +67,7 @@ func (h *Handler) Deposit(c *gin.Context) {
 		return
 	}
 
-	// Reload account to get the new balance
-	if err := tx.First(&account, account.ID).Error; err != nil {
-		tx.Rollback()
-		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToReloadAccountErrorJSON)
-		return
-	}
+	account.Balance += deposit.Amount
 
 	// Create transaction record
 	transaction := models.Transaction{
@@ -184,12 +179,7 @@ func (h *Handler) Withdraw(c *gin.Context) {
 		return
 	}
 
-	// Reload account to get the new balance
-	if err := tx.First(&account, account.ID).Error; err != nil {
-		tx.Rollback()
-		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToReloadAccountErrorJSON)
-		return
-	}
+	account.Balance -= withdrawal.Amount
 
 	// Create transaction record
 	transaction := models.Transaction{
@@ -314,17 +304,8 @@ func (h *Handler) Transfer(c *gin.Context) {
 		return
 	}
 
-	// Reload accounts to get accurate balances
-	if err := tx.First(&fromAccount, fromAccount.ID).Error; err != nil {
-		tx.Rollback()
-		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToReloadSourceAccountErrorJSON)
-		return
-	}
-	if err := tx.First(&toAccount, toAccount.ID).Error; err != nil {
-		tx.Rollback()
-		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToReloadDestinationAccountErrorJSON)
-		return
-	}
+	fromAccount.Balance -= transfer.Amount
+	toAccount.Balance += transfer.Amount
 
 	// Create transaction records
 	outgoingTx := models.Transaction{

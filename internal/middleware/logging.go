@@ -93,13 +93,14 @@ func (rl *RequestLogger) LoggingMiddleware() gin.HandlerFunc {
 		}
 
 		// Create log entry
+		// UserAgent is sanitized to prevent CRLF log injection (CWE-117) and log pollution
 		logEntry := RequestLog{
 			RequestID:    requestID,
 			Method:       c.Request.Method,
 			Path:         c.Request.URL.Path,
 			Query:        c.Request.URL.RawQuery,
 			IP:           GetClientIP(c),
-			UserAgent:    c.Request.UserAgent(),
+			UserAgent:    validation.SanitizeUserAgent(c.Request.UserAgent()),
 			StatusCode:   c.Writer.Status(),
 			ResponseTime: responseTime,
 			ContentType:  c.Writer.Header().Get("Content-Type"),
@@ -221,7 +222,7 @@ func (al *AuditLogger) Log(c *gin.Context, action, resource, resourceID, descrip
 		Description: description,
 		Timestamp:   time.Now().UTC(),
 		IP:          GetClientIP(c),
-		UserAgent:   c.Request.UserAgent(),
+		UserAgent:   validation.SanitizeUserAgent(c.Request.UserAgent()),
 		Metadata:    metadata,
 	}
 

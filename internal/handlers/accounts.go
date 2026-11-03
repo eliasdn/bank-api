@@ -148,9 +148,7 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 
 	validator := validation.New()
 	if err := validator.ValidateAccountType(accountType); err != nil {
-		c.JSON(http.StatusBadRequest, struct {
-			Error string `json:"error"`
-		}{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
 	}
 
@@ -174,9 +172,10 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 		c.Error(err)
 	}
 
-	c.JSON(http.StatusCreated, struct {
+	type accountCreateResponse struct {
 		Data models.Account `json:"data"`
-	}{Data: account})
+	}
+	c.JSON(http.StatusCreated, accountCreateResponse{Data: account})
 }
 
 func (h *Handler) GetAccount(c *gin.Context) {
@@ -203,7 +202,8 @@ func (h *Handler) GetAccount(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, struct {
+	type accountGetResponse struct {
 		Data models.Account `json:"data"`
-	}{Data: account})
+	}
+	c.JSON(http.StatusOK, accountGetResponse{Data: account})
 }

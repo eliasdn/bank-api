@@ -14,6 +14,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// errorResponse provides a zero-allocation schema for dynamic error messages.
+type errorResponse struct {
+	Error string `json:"error"`
+}
+
 var (
 	usernameOrEmailAlreadyExistsErrorJSON = []byte(`{"error":"username or email already exists"}`)
 	failedToHashPasswordErrorJSON         = []byte(`{"error":"failed to hash password"}`)
@@ -59,18 +64,14 @@ type LoginRequest struct {
 func (h *Handler) RegisterUser(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, struct {
-			Error string `json:"error"`
-		}{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
 	}
 
 	// Validate registration input
 	validator := validation.New()
 	if err := validator.ValidateUserRegistration(req.Username, req.Email, req.Password, req.FullName); err != nil {
-		c.JSON(http.StatusBadRequest, struct {
-			Error string `json:"error"`
-		}{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
 	}
 
@@ -101,12 +102,13 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, struct {
+	type registerResponse struct {
 		ID       uint   `json:"id"`
 		Username string `json:"username"`
 		Email    string `json:"email"`
 		FullName string `json:"fullName"`
-	}{
+	}
+	c.JSON(http.StatusCreated, registerResponse{
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
@@ -117,18 +119,14 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 func (h *Handler) LoginUser(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, struct {
-			Error string `json:"error"`
-		}{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
 	}
 
 	// Validate username and password against control characters, line breaks, and null bytes to prevent injection/truncation
 	validator := validation.New()
 	if err := validator.ValidateUsername(req.Username); err != nil {
-		c.JSON(http.StatusBadRequest, struct {
-			Error string `json:"error"`
-		}{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
 	}
 	for i := 0; i < len(req.Password); i++ {
@@ -170,22 +168,19 @@ func (h *Handler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, struct {
-		Token string `json:"token"`
-		User  struct {
-			ID       uint   `json:"id"`
-			Username string `json:"username"`
-			Email    string `json:"email"`
-			FullName string `json:"fullName"`
-		} `json:"user"`
-	}{
+	type userLoginData struct {
+		ID       uint   `json:"id"`
+		Username string `json:"username"`
+		Email    string `json:"email"`
+		FullName string `json:"fullName"`
+	}
+	type loginResponse struct {
+		Token string        `json:"token"`
+		User  userLoginData `json:"user"`
+	}
+	c.JSON(http.StatusOK, loginResponse{
 		Token: tokenString,
-		User: struct {
-			ID       uint   `json:"id"`
-			Username string `json:"username"`
-			Email    string `json:"email"`
-			FullName string `json:"fullName"`
-		}{
+		User: userLoginData{
 			ID:       user.ID,
 			Username: user.Username,
 			Email:    user.Email,

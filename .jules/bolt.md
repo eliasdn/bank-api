@@ -228,3 +228,10 @@
 ## 2026-10-24 - [Optimize SanitizeUserAgent with fast path and stack array]
 **Learning:** `SanitizeUserAgent` always allocated a byte slice `[]byte(ua)` on the heap to scan for control characters. For valid strings that don't need modification, this allocation is completely wasted.
 **Action:** To optimize string sanitization routines (e.g., `SanitizeUserAgent`), perform a fast-path scan to check if modifications are required before allocating memory. If no control characters are found, return the original string directly to avoid redundant slice allocations. If modification is needed, use a fixed-size stack array `var b [N]byte` and copy the data to avoid dynamic heap allocation.
+## 2026-11-02 - Eliminate DB reload after balance update in handlers
+**Learning:** In `internal/handlers/transactions.go`, reloading an account (via `tx.First`) just to read the new balance after an `UpdateColumn` query adds unnecessary database round-trips (N+1 queries per transaction operation) which harms performance under load. Since the transaction endpoints operate on a known `amount`, the resulting balance can be safely calculated in-memory directly on the struct (e.g., `account.Balance += deposit.Amount`) instead of issuing another database SELECT.
+**Action:** Replace `tx.First` reload queries after single-field mathematical database updates (like `balance = balance - amount`) with in-memory arithmetic on the structs to save database round trips.
+
+## 2026-11-04 - Optimize anonymous structs in c.JSON
+**Learning:** In hot paths that return dynamic JSON responses via `c.JSON`, passing a named struct by value still causes a heap allocation (due to the `any` interface), but replacing anonymous structs with predefined named structs improves efficiency by preventing `encoding/json` from repeatedly reflecting and caching identical anonymous struct types.
+**Action:** Replace `gin.H` map allocations and anonymous structs with explicit, named structs (e.g., a defined `errorResponse` struct) in `c.JSON` payloads. While this doesn't fully eliminate heap allocations in `c.JSON`, it avoids map allocations and reduces JSON reflection overhead.

@@ -65,11 +65,11 @@ func main() {
 	})
 	router.Use(rateLimiter.RateLimit())
 
-	// Expose metrics endpoint
-	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
-
 	// Initialize auth middleware
 	authMiddleware := middleware.NewAuthMiddleware(cfg)
+
+	// Expose metrics endpoint (Protected to prevent information disclosure)
+	router.GET("/metrics", authMiddleware.Authenticate(), gin.WrapH(promhttp.Handler()))
 
 	// Health check endpoints
 	healthHandler := handlers.NewHealthHandler(dbInstance.DB)

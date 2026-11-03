@@ -174,3 +174,7 @@
 **Vulnerability:** The `User-Agent` header was logged without sanitization in both HTTP request logs (`RequestLogger.LoggingMiddleware`) and audit logs (`AuditLogger.Log`), making it vulnerable to CRLF log injection.
 **Learning:** Raw headers from clients should never be trusted and directly logged, as they can be manipulated to inject malicious line breaks or control characters into structured logs or databases.
 **Prevention:** Always sanitize client headers like `User-Agent` (e.g., using `validation.SanitizeUserAgent`) to remove control characters before writing them to logs.
+## 2026-10-31 - Unauthenticated Prometheus Metrics Disclosure
+**Vulnerability:** The `/metrics` endpoint serving Prometheus metrics via `promhttp.Handler()` was configured without authentication, exposing internal application state, API usage metrics, and business logic counters to the public internet, which could aid attackers in reconnaissance or denial-of-service planning.
+**Learning:** Default monitoring and observability endpoints expose sensitive data regarding application activity. Simply because an endpoint is designed for internal infrastructure (like Prometheus) does not mean it is automatically secured by the routing framework.
+**Prevention:** Always wrap monitoring and metric endpoints with appropriate authentication or restricted access controls (e.g., `authMiddleware.Authenticate()` or basic auth configured for the monitoring infrastructure) before exposing them on the router.

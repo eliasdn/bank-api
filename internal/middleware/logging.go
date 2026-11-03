@@ -93,6 +93,7 @@ func (rl *RequestLogger) LoggingMiddleware() gin.HandlerFunc {
 		}
 
 		// Create log entry
+		// UserAgent is sanitized to prevent CRLF log injection (CWE-117) and log pollution
 		logEntry := RequestLog{
 			RequestID:    requestID,
 			Method:       c.Request.Method,

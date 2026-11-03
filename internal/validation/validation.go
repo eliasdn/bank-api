@@ -181,8 +181,12 @@ func (v *Validator) ValidateFullName(fullName string) error {
 	if strings.TrimSpace(fullName) == "" {
 		return errors.NewValidationError("full name cannot be empty")
 	}
+	// Optimization: Fast path evaluates common valid characters first to avoid unnecessary edge case checks (null bytes/newlines) on every iteration.
 	for i := 0; i < len(fullName); i++ {
 		c := fullName[i]
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == ' ' {
+			continue
+		}
 		if c == 0 || c == '\r' || c == '\n' {
 			return errors.NewValidationError("full name cannot contain null bytes or line breaks")
 		}
@@ -233,8 +237,12 @@ func (v *Validator) ValidateDescription(description string) error {
 	if len(description) > MaxDescriptionLength {
 		return errors.NewValidationError("description cannot exceed %d characters", MaxDescriptionLength)
 	}
+	// Optimization: Fast path evaluates common valid characters first to avoid unnecessary edge case checks (null bytes/newlines) on every iteration.
 	for i := 0; i < len(description); i++ {
 		c := description[i]
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == ' ' || c == '.' || c == ',' {
+			continue
+		}
 		if c == 0 || c == '\r' || c == '\n' {
 			return errors.NewValidationError("description cannot contain null bytes or line breaks")
 		}

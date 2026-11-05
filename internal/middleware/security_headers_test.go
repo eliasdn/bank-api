@@ -30,7 +30,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	assert.Equal(t, "strict-origin-when-cross-origin", w.Header().Get("Referrer-Policy"))
 	assert.Equal(t, "default-src 'self'", w.Header().Get("Content-Security-Policy"))
 	assert.Equal(t, "max-age=31536000; includeSubDomains", w.Header().Get("Strict-Transport-Security"))
-	assert.Equal(t, "geolocation=(), camera=(), microphone=()", w.Header().Get("Permissions-Policy"))
+	assert.Equal(t, "geolocation=(), camera=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=()", w.Header().Get("Permissions-Policy"))
 	assert.Equal(t, "none", w.Header().Get("X-Permitted-Cross-Domain-Policies"))
 	assert.Equal(t, "off", w.Header().Get("X-DNS-Prefetch-Control"))
 	assert.Equal(t, "noopen", w.Header().Get("X-Download-Options"))

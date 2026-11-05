@@ -243,3 +243,7 @@
 ## 2026-11-04 - Optimize anonymous structs in c.JSON
 **Learning:** In hot paths that return dynamic JSON responses via `c.JSON`, passing a named struct by value still causes a heap allocation (due to the `any` interface), but replacing anonymous structs with predefined named structs improves efficiency by preventing `encoding/json` from repeatedly reflecting and caching identical anonymous struct types.
 **Action:** Replace `gin.H` map allocations and anonymous structs with explicit, named structs (e.g., a defined `errorResponse` struct) in `c.JSON` payloads. While this doesn't fully eliminate heap allocations in `c.JSON`, it avoids map allocations and reduces JSON reflection overhead.
+
+## 2024-05-18 - Prevent Full-Row Updates with GORM
+**Learning:** `tx.Save(&model)` triggers a full-row update in GORM, which increases database I/O overhead by saving fields that haven't changed.
+**Action:** Use `tx.Model(&model).Select("Field1").Updates(model)` for targeted updates to reduce payload size and prevent unnecessary database writes when only specific fields are modified.

@@ -293,7 +293,8 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 			tx.Rollback()
 		}
 	}()
-	if err := tx.Save(&user).Error; err != nil {
+	// Optimization: Use Select and Updates to only save changed fields, preventing unnecessary full-row database updates
+	if err := tx.Model(&user).Select("FullName", "Email").Updates(user).Error; err != nil {
 		tx.Rollback()
 		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateUserErrorJSON)
 		return

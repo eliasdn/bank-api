@@ -293,7 +293,10 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 			tx.Rollback()
 		}
 	}()
-	if err := tx.Save(&user).Error; err != nil {
+
+	// Optimization: Use targeted updates instead of Save to prevent full-row updates.
+	// This reduces DB I/O payload size and prevents unintended mass assignment vulnerabilities.
+	if err := tx.Model(&user).Select("FullName", "Email").Updates(user).Error; err != nil {
 		tx.Rollback()
 		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateUserErrorJSON)
 		return

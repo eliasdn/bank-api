@@ -243,3 +243,6 @@
 ## 2026-11-04 - Optimize anonymous structs in c.JSON
 **Learning:** In hot paths that return dynamic JSON responses via `c.JSON`, passing a named struct by value still causes a heap allocation (due to the `any` interface), but replacing anonymous structs with predefined named structs improves efficiency by preventing `encoding/json` from repeatedly reflecting and caching identical anonymous struct types.
 **Action:** Replace `gin.H` map allocations and anonymous structs with explicit, named structs (e.g., a defined `errorResponse` struct) in `c.JSON` payloads. While this doesn't fully eliminate heap allocations in `c.JSON`, it avoids map allocations and reduces JSON reflection overhead.
+## 2026-11-04 - Eliminate dynamic map slice allocation in audit.go
+**Learning:** In high-throughput hot paths like `internal/audit/audit.go`, string buffer allocations such as `descBuf := make([]byte, 0, len(transaction.TransactionType)+4+15+12+len(account.AccountNumber))` allocate on the heap and incur memory overhead during transaction logging.
+**Action:** Since the string is small, replace the dynamic slice allocation `make([]byte, ...)` with a fixed-size stack array `var descBuf [128]byte` and slice it correctly when appending (e.g., `buf := descBuf[:0]`) to ensure the buffer is allocated on the stack instead of the heap.

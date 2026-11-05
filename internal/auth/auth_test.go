@@ -128,3 +128,49 @@ func TestLoginUser_NullByteAndControlCharRejection(t *testing.T) {
 		})
 	}
 }
+
+func TestLoginUser_InputLengthValidation(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	database := setupTestDB()
+	cfg := config.LoadTestConfig()
+
+	handler := &Handler{
+		DB:     database,
+		Config: cfg,
+	}
+
+	router := gin.Default()
+	router.POST("/login", handler.LoginUser)
+
+	testCases := []struct {
+		name     string
+		username string
+		password string
+	}{
+		{
+			name:     "Short username (< 3 chars)",
+			username: "ab",
+			password: "Password123!",
+		},
+		{
+			name:     "Short password (< 8 chars)",
+			username: "validuser",
+			password: "Pass1!",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			reqBody, _ := json.Marshal(LoginRequest{
+				Username: tc.username,
+				Password: tc.password,
+			})
+			req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(reqBody))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+	}
+}

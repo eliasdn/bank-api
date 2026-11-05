@@ -14,7 +14,7 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Header("Content-Security-Policy", "default-src 'self'")
 		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-		c.Header("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
+		c.Header("Permissions-Policy", "geolocation=(), camera=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=()")
 		c.Header("X-Permitted-Cross-Domain-Policies", "none")
 		c.Header("X-DNS-Prefetch-Control", "off")
 		c.Header("X-Download-Options", "noopen")

@@ -77,7 +77,8 @@ type txLog struct {
 // LogTransaction logs a financial transaction
 func (l *DatabaseAuditLogger) LogTransaction(userID uint, transaction *models.Transaction, account *models.Account, ipAddress, userAgent string) error {
 	// Pre-allocate buffer to avoid intermediate string allocations during concatenation
-	descBuf := make([]byte, 0, len(transaction.TransactionType)+4+15+12+len(account.AccountNumber))
+	var descArray [128]byte
+	descBuf := descArray[:0]
 	descBuf = append(descBuf, transaction.TransactionType...)
 	descBuf = append(descBuf, " of "...)
 	descBuf = validation.AppendFloatAmount(descBuf, transaction.Amount)

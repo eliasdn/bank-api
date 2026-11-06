@@ -94,6 +94,6 @@ var (
 )
 
 // errorResponse provides a zero-allocation schema for dynamic error messages.
-type errorResponse struct {
+type ErrorResponse struct {
 	Error string `json:"error"`
 }

@@ -249,3 +249,6 @@
 ## 2026-11-04 - Eliminate full-row database updates in handlers
 **Learning:** Using `tx.Save(&model)` for updates causes GORM to update every single field on the model, even those that haven't changed. This adds unnecessary DB I/O payload and opens up vectors for unintended mass-assignment vulnerabilities.
 **Action:** When updating database rows using GORM for a subset of fields, replace `tx.Save(&model)` with targeted updates `tx.Model(&model).Select("Field1", "Field2").Updates(model)` to explicitly declare which fields are allowed to be updated.
+## 2026-11-04 - Optimize anonymous structs in c.JSON
+**Learning:** In hot paths that return dynamic JSON responses via `c.JSON`, passing a named struct by value still causes a heap allocation (due to the `any` interface), but replacing anonymous structs with predefined named structs improves efficiency by preventing `encoding/json` from repeatedly reflecting and caching identical anonymous struct types.
+**Action:** Replace `gin.H` map allocations and anonymous structs with explicit, named structs (e.g., a defined `ErrorResponse` struct) in `c.JSON` payloads. While this doesn't fully eliminate heap allocations in `c.JSON`, it avoids map allocations and reduces JSON reflection overhead.

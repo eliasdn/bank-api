@@ -23,6 +23,8 @@ const (
 type Validator struct{}
 
 // New creates a new validator instance
+var DefaultValidator = &Validator{}
+
 func New() *Validator {
 	return &Validator{}
 }

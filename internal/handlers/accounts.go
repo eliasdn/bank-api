@@ -146,8 +146,7 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 		accountType = "checking"
 	}
 
-	validator := validation.New()
-	if err := validator.ValidateAccountType(accountType); err != nil {
+	if err := validation.DefaultValidator.ValidateAccountType(accountType); err != nil {
 		c.JSON(http.StatusBadRequest, struct {
 			Error string `json:"error"`
 		}{Error: err.Error()})

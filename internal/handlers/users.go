@@ -121,8 +121,12 @@ func (h *Handler) LoginUser(c *gin.Context) {
 		}{Error: err.Error()})
 		return
 	}
+	// Optimization: Fast path evaluates common valid characters first to avoid unnecessary edge case checks (null bytes/newlines) on every iteration.
 	for i := 0; i < len(req.Password); i++ {
 		ch := req.Password[i]
+		if ch > '\r' {
+			continue
+		}
 		if ch == 0 || ch == '\r' || ch == '\n' {
 			c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidPasswordFormatErrorJSON)
 			return

@@ -249,3 +249,6 @@
 ## 2026-11-04 - Eliminate full-row database updates in handlers
 **Learning:** Using `tx.Save(&model)` for updates causes GORM to update every single field on the model, even those that haven't changed. This adds unnecessary DB I/O payload and opens up vectors for unintended mass-assignment vulnerabilities.
 **Action:** When updating database rows using GORM for a subset of fields, replace `tx.Save(&model)` with targeted updates `tx.Model(&model).Select("Field1", "Field2").Updates(model)` to explicitly declare which fields are allowed to be updated.
+## 2026-11-06 - Avoid instantiating stateless structs in hot paths
+**Learning:** In Gin HTTP handlers, repeatedly instantiating stateless structs via `validation.New()` on every request unnecessarily increases pointer allocation and garbage collection overhead.
+**Action:** In Gin HTTP handlers, avoid repeatedly instantiating stateless structs (e.g., `validation.New()`) on every request. Instead, use a shared, exported global instance (e.g., `validation.DefaultValidator`) to eliminate unnecessary pointer allocations and reduce overhead in high-throughput paths.

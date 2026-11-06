@@ -58,8 +58,7 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	}
 
 	// Validate registration input
-	validator := validation.New()
-	if err := validator.ValidateUserRegistration(req.Username, req.Email, req.Password, req.FullName); err != nil {
+	if err := validation.DefaultValidator.ValidateUserRegistration(req.Username, req.Email, req.Password, req.FullName); err != nil {
 		c.JSON(http.StatusBadRequest, struct {
 			Error string `json:"error"`
 		}{Error: err.Error()})
@@ -116,8 +115,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	}
 
 	// Validate username and password against control characters, line breaks, and null bytes to prevent injection/truncation
-	validator := validation.New()
-	if err := validator.ValidateUsername(req.Username); err != nil {
+	if err := validation.DefaultValidator.ValidateUsername(req.Username); err != nil {
 		c.JSON(http.StatusBadRequest, struct {
 			Error string `json:"error"`
 		}{Error: err.Error()})
@@ -263,9 +261,8 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	validator := validation.New()
 	if updateData.FullName != nil {
-		if err := validator.ValidateFullName(*updateData.FullName); err != nil {
+		if err := validation.DefaultValidator.ValidateFullName(*updateData.FullName); err != nil {
 			c.JSON(http.StatusBadRequest, struct {
 				Error string `json:"error"`
 			}{Error: err.Error()})
@@ -274,7 +271,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		user.FullName = *updateData.FullName
 	}
 	if updateData.Email != nil {
-		if err := validator.ValidateEmail(*updateData.Email); err != nil {
+		if err := validation.DefaultValidator.ValidateEmail(*updateData.Email); err != nil {
 			c.Data(http.StatusBadRequest, "application/json; charset=utf-8", invalidEmailFormatErrorJSON)
 			return
 		}

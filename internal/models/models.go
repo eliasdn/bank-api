@@ -18,8 +18,7 @@ type User struct {
 
 // SetPassword validates complexity and sets the user's password
 func (u *User) SetPassword(password string) error {
-	validator := validation.New()
-	if err := validator.ValidatePassword(password); err != nil {
+	if err := validation.DefaultValidator.ValidatePassword(password); err != nil {
 		return err
 	}
 

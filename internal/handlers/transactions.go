@@ -37,8 +37,7 @@ func (h *Handler) Deposit(c *gin.Context) {
 		return
 	}
 
-	validator := validation.New()
-	if err := validator.ValidateAmount(deposit.Amount); err != nil {
+	if err := validation.DefaultValidator.ValidateAmount(deposit.Amount); err != nil {
 		c.JSON(http.StatusBadRequest, struct {
 			Error string `json:"error"`
 		}{Error: err.Error()})
@@ -138,8 +137,7 @@ func (h *Handler) Withdraw(c *gin.Context) {
 		return
 	}
 
-	validator := validation.New()
-	if err := validator.ValidateAmount(withdrawal.Amount); err != nil {
+	if err := validation.DefaultValidator.ValidateAmount(withdrawal.Amount); err != nil {
 		c.JSON(http.StatusBadRequest, struct {
 			Error string `json:"error"`
 		}{Error: err.Error()})
@@ -249,8 +247,7 @@ func (h *Handler) Transfer(c *gin.Context) {
 		return
 	}
 
-	validator := validation.New()
-	if err := validator.ValidateTransfer(fromAccount.ID, transfer.ToAccountID, transfer.Amount, transfer.Description); err != nil {
+	if err := validation.DefaultValidator.ValidateTransfer(fromAccount.ID, transfer.ToAccountID, transfer.Amount, transfer.Description); err != nil {
 		c.JSON(http.StatusBadRequest, struct {
 			Error string `json:"error"`
 		}{Error: err.Error()})

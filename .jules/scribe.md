@@ -30,3 +30,6 @@
 ## 2026-10-26 - Accounts Wrapper Pattern Drift
 **Learning:** Recent codebase changes refactored `AccountListResponse` and `AccountResponse` in `internal/handlers/accounts.go` to wrap account properties inside a `data` JSON property rather than returning the raw struct or a slice directly. Additionally, GORM models like `Account` serialized without explicit `json` tags serialize to PascalCase (e.g. `AccountNumber` instead of `account_number`).
 **Action:** When updating OpenAPI docs for account responses, explicitly refactor schemas to use a wrapper pattern (`data`) matching the new DTOs, and ensure the nested model schemas use PascalCase property names exactly as Go's default JSON marshalling produces for structs without tags.
+## 2026-11-09 - Documenting CORS Configuration and Production Constraints
+**Learning:** The codebase was updated to support configurable CORS settings, and explicitly disallows the wildcard `*` for `CORS_ALLOWED_ORIGINS` in production environments (`ENVIRONMENT=production`). When this occurs, CORS is effectively disabled.
+**Action:** When updating documentation related to security features like CORS, ensure environment variables and their specific production constraints are fully documented in `.env.example`, `README.md`, and troubleshooting guides.

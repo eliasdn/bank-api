@@ -209,6 +209,13 @@ This guide provides solutions for common issues encountered during development, 
    ```
 
 ## Runtime Issues
+### CORS Issues
+**Symptoms**: Cross-Origin Resource Sharing errors in browser console.
+
+**Solutions**:
+1. Verify `CORS_ALLOWED_ORIGINS` environment variable configuration.
+2. Note that setting `CORS_ALLOWED_ORIGINS=*` is explicitly disabled when `ENVIRONMENT=production`. In production, this misconfiguration will cause the middleware to block all CORS requests. You must specify exact domain origins in production.
+
 
 ### Port Already in Use
 **Symptoms**: `bind: address already in use` error.

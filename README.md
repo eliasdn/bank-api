@@ -173,6 +173,12 @@ The application uses environment variables for configuration. See `.env.example`
 | `DB_DRIVER` | Database driver (sqlite only) | `sqlite` |
 | `RATE_LIMIT_RPS` | Rate limit requests per second | `100` |
 | `LOG_LEVEL` | Logging level (debug/info/warn/error) | `info` |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | `*` |
+| `CORS_ALLOWED_METHODS` | Comma-separated list of allowed CORS methods | `GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS` |
+| `CORS_ALLOWED_HEADERS` | Comma-separated list of allowed CORS headers | `Origin,Content-Length,Content-Type,Authorization,X-Request-ID` |
+| `CORS_EXPOSED_HEADERS` | Comma-separated list of exposed CORS headers | `Content-Length,X-Request-ID,Retry-After` |
+| `CORS_ALLOW_CREDENTIALS` | Allow CORS credentials | `false` |
+| `CORS_MAX_AGE` | CORS preflight cache duration | `12h` |
 
 ## 🗄️ Database Management
 

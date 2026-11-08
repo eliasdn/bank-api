@@ -23,6 +23,7 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		c.Header("Cross-Origin-Resource-Policy", "same-origin")
 		c.Header("Cache-Control", "no-store, max-age=0, must-revalidate")
 		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
 		// Prevent web server fingerprinting / information disclosure
 		c.Header("Server", "")
 		c.Next()

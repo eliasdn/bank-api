@@ -11,8 +11,13 @@ func CORSMiddleware(cfg *config.AppConfig) gin.HandlerFunc {
 	corsConfig := cors.DefaultConfig()
 
 	// Configure Allowed Origins
+	// In production, disallow wildcard '*' to prevent overly permissive CORS vulnerabilities
 	if len(cfg.CORS.AllowedOrigins) == 1 && cfg.CORS.AllowedOrigins[0] == "*" {
-		corsConfig.AllowAllOrigins = true
+		if cfg.IsProduction() {
+			corsConfig.AllowOriginFunc = func(origin string) bool { return false }
+		} else {
+			corsConfig.AllowAllOrigins = true
+		}
 	} else if len(cfg.CORS.AllowedOrigins) > 0 {
 		corsConfig.AllowOrigins = cfg.CORS.AllowedOrigins
 	} else {

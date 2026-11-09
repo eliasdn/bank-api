@@ -12,7 +12,8 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-		c.Header("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'")
+		// Mitigate HTML base tag injection attacks (CWE-79) by restricting base-uri
+		c.Header("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'; base-uri 'none'")
 		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		c.Header("Permissions-Policy", "geolocation=(), camera=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=()")
 		c.Header("X-Permitted-Cross-Domain-Policies", "none")

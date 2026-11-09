@@ -33,3 +33,6 @@
 ## 2026-11-09 - Documenting CORS Configuration and Production Constraints
 **Learning:** The codebase was updated to support configurable CORS settings, and explicitly disallows the wildcard `*` for `CORS_ALLOWED_ORIGINS` in production environments (`ENVIRONMENT=production`). When this occurs, CORS is effectively disabled.
 **Action:** When updating documentation related to security features like CORS, ensure environment variables and their specific production constraints are fully documented in `.env.example`, `README.md`, and troubleshooting guides.
+## 2026-11-10 - Content-Security-Policy base-uri Documentation Drift
+**Learning:** The codebase was updated to enforce `Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; base-uri 'none'` in `internal/middleware/security_headers.go` to mitigate HTML base tag injection attacks. However, this addition was not reflected in `README.md`'s Security Features list or `docs/openapi.yaml`'s Security Headers section.
+**Action:** When auditing codebase changes for new security headers (e.g. `base-uri` CSP restrictions), thoroughly review and ensure their explicit mention and purpose are documented in `README.md` and `docs/openapi.yaml` sections detailing security features and HTTP headers.

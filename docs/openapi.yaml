@@ -40,7 +40,7 @@ info:
 
     ## Security Headers
 
-    The API includes standard HTTP security headers such as `X-Download-Options: noopen` and `Cross-Origin-Embedder-Policy: require-corp` to guard against common web vulnerabilities.
+    The API includes standard HTTP security headers such as `X-Download-Options: noopen`, `Cross-Origin-Embedder-Policy: require-corp`, and `Content-Security-Policy` with `base-uri` restrictions to guard against common web vulnerabilities.
   version: 1.0.0
   contact:
     name: Bank API Support

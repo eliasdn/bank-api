@@ -271,6 +271,7 @@ rm bank_test.db
 - SQL injection prevention (ORM usage)
 - XSS protection
 - X-Download-Options header (noopen)
+- Content-Security-Policy with base-uri restriction
 
 ## 🚀 Deployment
 

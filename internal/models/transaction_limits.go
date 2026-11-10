@@ -190,8 +190,12 @@ func (s *TransactionLimitService) RecordTransaction(accountID uint, transactionI
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(limit).UpdateColumns(updates).Error; err != nil {
-			return err
+		res := tx.Model(limit).UpdateColumns(updates)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return errors.New("concurrent_update_failed", "Failed to update transaction limits", http.StatusConflict)
 		}
 		return tx.Create(&usage).Error
 	})

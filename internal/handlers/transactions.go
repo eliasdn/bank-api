@@ -60,9 +60,15 @@ func (h *Handler) Deposit(c *gin.Context) {
 	}()
 
 	// Update account balance
-	if err := tx.Model(&account).UpdateColumn("balance", gorm.Expr("balance + ?", deposit.Amount)).Error; err != nil {
+	res := tx.Model(&account).UpdateColumn("balance", gorm.Expr("balance + ?", deposit.Amount))
+	if res.Error != nil {
 		tx.Rollback()
 		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateBalanceErrorJSON)
+		return
+	}
+	if res.RowsAffected == 0 {
+		tx.Rollback()
+		c.Data(http.StatusNotFound, "application/json; charset=utf-8", accountNotFoundErrorJSON)
 		return
 	}
 
@@ -295,9 +301,15 @@ func (h *Handler) Transfer(c *gin.Context) {
 	}
 
 	// Update destination account
-	if err := tx.Model(&toAccount).UpdateColumn("balance", gorm.Expr("balance + ?", transfer.Amount)).Error; err != nil {
+	res2 := tx.Model(&toAccount).UpdateColumn("balance", gorm.Expr("balance + ?", transfer.Amount))
+	if res2.Error != nil {
 		tx.Rollback()
 		c.Data(http.StatusInternalServerError, "application/json; charset=utf-8", failedToUpdateDestinationAccountErrorJSON)
+		return
+	}
+	if res2.RowsAffected == 0 {
+		tx.Rollback()
+		c.Data(http.StatusNotFound, "application/json; charset=utf-8", destinationAccountNotFoundErrorJSON)
 		return
 	}
 

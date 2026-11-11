@@ -183,3 +183,8 @@
 **Vulnerability:** In financial transactions (`Deposit` and `Transfer`), atomic database updates using `tx.Model(&account).UpdateColumn(...)` failed to check `RowsAffected`. Because GORM does not throw an error when `0` rows are updated (e.g., if the account was concurrently deleted), the system silently bypassed the balance update while continuing to record the transaction success and apply transaction limit usage. This led to a Time-of-Check to Time-of-Use (TOCTOU) silent failure resulting in financial discrepancies.
 **Learning:** Atomic database updates using conditions or implicit primary keys via `UpdateColumn` do not return errors if the target row ceases to exist or fails constraints.
 **Prevention:** Always assign the database result to a variable (e.g., `res := tx.Model(...).UpdateColumn(...)`) and explicitly check both `res.Error` and `res.RowsAffected == 0` to verify the update actually occurred before committing financial transactions.
+
+## 2026-11-11 - Remediating Standard Library Vulnerability GO-2026-6859 in net/http
+**Vulnerability:** GO-2026-6859 flags an HTTP/1 server crash and Denial of Service in `net/http` when `MaxBytesReader` limit is exceeded due to unsynchronized header writes racing with explicit server handler header writes.
+**Learning:** In Go HTTP applications utilizing request body size limiters like `http.MaxBytesReader`, concurrency issues within standard library routines can cause runtime panics and server crashes on HTTP/1 connections unless the underlying Go runtime is kept up to date.
+**Prevention:** Maintain `go.mod` up to date with the latest Go patch version (e.g., `go 1.26.11`) and run periodic `govulncheck` audits to identify and patch standard library vulnerabilities.
